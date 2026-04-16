@@ -1,0 +1,36 @@
+# --- Python / Django ---
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+db.sqlite3
+db.sqlite3-journal
+
+# --- Environments & Secrets ---
+.env
+.venv/
+venv/
+env/
+ENV/
+bin/
+lib/
+include/
+
+# --- Database / PostgreSQL ---
+# (Usually ignored as data stays in your local Postgres instance)
+*.sql
+*.dump
+
+# --- Media and Static ---
+# Ignore uploaded user media but keep the directory if needed
+media/
+static/
+
+# --- System Files ---
+.DS_Store
+Thumbs.db
+
+# --- IDEs ---
+.vscode/
+.idea/
+*.swp

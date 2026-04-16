@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% load static %}
+<head>
+	<meta charset="utf-8" />
+	<title>My Store</title>
+	<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport" />
+	<meta content="" name="description" />
+	<meta content="" name="author" />
+</head>
+<body>
+    {% block content %}
+    <div class="row justify-content-center">
+        <div class="col-xl-6 col-lg-8">
+            <div class="panel panel-inverse">
+                <div class="panel-heading">
+                    <h4 class="panel-title">Sign Up   <small> -- </small> <small>  Join our store today</small></h4>
+                </div>
+                <div class="panel-body">
+                    <form method="post" class="form-horizontal">
+                        {% csrf_token %}
+                    
+                        <h5 class="mb-3">Account Information</h5>
+                        {% for field in form %}
+                            <div class="mb-3 row">
+                                <label class="col-form-label col-md-3 text-md-end">{{ field.label_tag }}</label>
+                                <div class="col-md-9">
+                                    {{ field }}
+                                    {% if field.help_text %}
+                                        <small class="form-text text-muted d-block">{{ field.help_text }}</small>
+                                    {% endif %}
+                                    {% for error in field.errors %}
+                                        <div class="text-danger small">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        
+                            {# Add a visual break after basic info #}
+                            {% if field.name == "email" %}
+                                <hr class="bg-gray-500" />
+                                <h5 class="mb-3">Delivery Details</h5>
+                            {% endif %}
+                        {% endfor %}
+
+                        <div class="row">
+                            <div class="col-md-9 offset-md-3 mt-3">
+                                <button type="submit" class="btn btn-primary w-100 btn-lg">Create My Account</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="panel-footer text-center">
+                    Already have an account? <a href="{% url 'login' %}">Login here</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endblock %}
+</body>

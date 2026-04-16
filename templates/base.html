@@ -1,0 +1,523 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="utf-8" />
+	<title>My Store</title>
+	<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport" />
+	<meta content="" name="description" />
+	<meta content="" name="author" />
+
+    <!-- ================== BEGIN BASE CSS STYLE ================== -->
+
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700" rel="stylesheet" />
+    <link href="{% static 'plugins/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet" />
+    <link href="{% static 'plugins/font-awesome/css/font-awesome.min.css' %}" rel="stylesheet" />
+    <link href="{% static 'css/style.min.css' %}" rel="stylesheet" />
+    <link href="{% static 'css/style-responsive.min.css' %}" rel="stylesheet" />
+    <link href="{% static 'css/theme/default.css' %}" id="theme" rel="stylesheet" />
+    <link href="{% static 'css/animate.min.css' %}" rel="stylesheet" />
+    {% block extra_css %}{% endblock %}
+
+    <!-- ================== END BASE CSS STYLE ================== -->
+
+    <!-- ================== BEGIN BASE JS ================== -->
+
+    <script src="{% static 'plugins/pace/pace.min.js' %}"></script>
+
+    <!-- ================== END BASE JS ================== -->
+</head>
+
+<body class="bg-silver">
+    <div id="page-container" class="fade">
+        <!-- BEGIN #top-nav -->
+        <div id="top-nav" class="top-nav">
+            <!-- BEGIN container -->
+            <div class="container">
+                <div class="collapse navbar-collapse">
+                    <ul class="nav navbar-nav">
+                        <li class="dropdown dropdown-hover">
+                            <a href="#" data-toggle="dropdown"><img src="{% static 'img/english.png' %}" class="flag-img" alt="" /> English <i class="fa fa-angle-down"></i></a>
+                            <ul class="dropdown-menu">
+                                <li><a href="#"><img src="{% static 'img/english.png' %}" class="flag-img" alt="" /> English</a></li>
+                                <li><a href="#"><img src="{% static 'img/german.png' %}" class="flag-img" alt="" /> German</a></li>
+                                <li><a href="#"><img src="{% static 'img/spanish.png' %}" class="flag-img" alt="" /> Spanish</a></li>
+                                <li><a href="#"><img src="{% static 'img/french.png' %}" class="flag-img" alt="" /> French</a></li>
+                                <li><a href="#"><img src="{% static 'img/chinese.png' %}" class="flag-img" alt="" /> Chinese</a></li>
+                            </ul>
+                        </li>
+                        <li><a href="#">Customer Care</a></li>
+                        <li><a href="{% url 'manage_orders' %}">Order Tracker</a></li>
+                    </ul>
+                    <ul class="nav navbar-nav navbar-right">
+                        <li><a href="#">Career</a></li>
+                        <li><a href="#">Our Forum</a></li>
+                        <li><a href="#">Newsletter</a></li>
+                        <li><a href="#"><i class="fa fa-facebook f-s-14"></i></a></li>
+                        <li><a href="#"><i class="fa fa-twitter f-s-14"></i></a></li>
+                        <li><a href="#"><i class="fa fa-instagram f-s-14"></i></a></li>
+                        <li><a href="#"><i class="fa fa-dribbble f-s-14"></i></a></li>
+                        <li><a href="#"><i class="fa fa-google-plus f-s-14"></i></a></li>
+                    </ul>
+                </div>
+            </div>
+            <!-- END container -->
+        </div>
+        <!-- END #top-nav -->
+
+        <!-- BEGIN #header -->
+        <div id="header" class="header">
+            <!-- BEGIN container -->
+            <div class="container">
+                <!-- BEGIN header-container -->
+                <div class="header-container">
+                    <!-- BEGIN navbar-header -->
+                    <div class="navbar-header">
+                        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse">
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                        </button>
+                        <div class="header-logo">
+                            <a href="{% url 'home' %}">
+                                <span class="brand"></span>
+                                <span>My </span>Store
+                                <small>E-Commerce Store</small>
+                            </a>
+                        </div>
+                    </div>
+                    <!-- END navbar-header -->
+                    <!-- BEGIN header-nav -->
+                    <div class="header-nav">
+                        <div class=" collapse navbar-collapse" id="navbar-collapse">
+                            <ul class="nav">
+                                <li class="active"><a href="{% url 'home' %}">Home</a></li>
+                                <li class="dropdown dropdown-full-width dropdown-hover">
+                                    <a href="#" data-toggle="dropdown">
+                                        Our Store
+                                        <i class="fa fa-angle-down"></i>
+                                        <span class="arrow top"></span>
+                                    </a>
+                                    <!-- BEGIN dropdown-menu -->
+                                    <div class="dropdown-menu p-0">
+                                        <!-- BEGIN dropdown-menu-container -->
+                                        <div class="dropdown-menu-container">
+                                            <!-- BEGIN dropdown-menu-sidebar -->
+                                            <div class="dropdown-menu-sidebar">
+                                                <h4 class="title">Shop By Categories</h4>
+                                                <ul class="dropdown-menu-list">
+                                                <li><a href="{% url 'products' %}">All Categories</a></li>
+                                                    {% for category in categories %}
+                                                        <li>
+                                                            <a href="{% url 'category_products' category.slug %}">
+                                                                {{ category.category_name }}
+                                                            </a>
+                                                        </li>
+                                                    {% empty %}
+                                                        <li><a href="#">No Categories</a></li>
+                                                    {% endfor %}
+                                                </ul>
+                                            </div>
+                                            <!-- END dropdown-menu-sidebar -->
+                                            <!-- BEGIN dropdown-menu-content -->
+                                            <div class="dropdown-menu-content">
+                                                <h4 class="title">Shop By Popular Phone</h4>
+                                                <div class="row">
+                                                    <div class="col-md-3">
+                                                        <ul class="dropdown-menu-list">
+                                                            {% for phone in popular_phones %}
+                                                                <li>
+                                                                    <a href="{% url 'product_detail' phone.category.slug phone.slug %}">
+                                                                        <i class="fa fa-fw fa-angle-right text-muted"></i> {{ phone.product_name }}
+                                                                    </a>
+                                                                </li>
+                                                            {% empty %}
+                                                                <li><a href="#">No phones available</a></li>
+                                                            {% endfor %}
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                                <h4 class="title">Shop By Brand</h4>
+                                                <div class="row" style="padding: 10px 20px; max-width: 600px;">
+                                                    {% for brand in links_brand|slice:":8" %}
+                                                        <div class="col-md-3 col-sm-4 col-xs-6" style="margin-bottom: 15px; text-align: center;">
+                                                            <a href="{% url 'brand_products' brand.slug %}">
+                                                                {% if brand.brand_image %}
+                                                                    <img src="{{ brand.brand_image.url }}" alt="{{ brand.brand_name }}"
+                                                                         style="max-height: 35px; width: auto; filter: grayscale(100%); transition: 0.3s;"
+                                                                         onmouseover="this.style.filter='grayscale(0%)'"
+                                                                         onmouseout="this.style.filter='grayscale(100%)'">
+                                                                {% else %}
+                                                                    <span class="text-muted" style="font-size: 11px;">{{ brand.brand_name }}</span>
+                                                                {% endif %}
+                                                            </a>
+                                                        </div>
+                                                    {% endfor %}
+                                                    <div class="col-md-12 text-center" style="border-top: 1px solid #eee; padding-top: 10px; margin-top: 5px;">
+                                                        <a href="{% url 'products' %}" class="text-primary" style="font-weight: bold; font-size: 12px;">
+                                                            See All Brands <i class="fa fa-arrow-right"></i>
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <!-- END dropdown-menu-content -->
+                                        </div>
+                                        <!-- END dropdown-menu-container -->
+                                    </div>
+                                    <!-- END dropdown-menu -->
+                                <li class="dropdown dropdown-hover">
+                                    <a href="#" data-toggle="dropdown">
+                                        Accessories
+                                        <i class="fa fa-angle-down"></i>
+                                        <span class="arrow top"></span>
+                                    </a>
+                                    <ul class="dropdown-menu">
+                                        {% for cat in categories %}
+                                            <li>
+                                                <a href="{% url 'category_products' cat.slug %}">
+                                                    {{ cat.category_name }}
+                                                </a>
+                                            </li>
+                                        {% empty %}
+                                            <li><a href="#">No Categories Found</a></li>
+                                        {% endfor %}
+                                    </ul>
+                                </li>
+                                <li><a href="{% url 'new_arrivals' %}">New Arrival</a></li>
+                                <li class="dropdown dropdown-hover">
+                                    <a href="#" data-toggle="dropdown">
+                                        <i class="fa fa-search search-btn"></i>
+                                        <span class="arrow top"></span>
+                                    </a>
+                                    <div class="dropdown-menu">
+                                        <form action="{% url 'search_results' %}" method="GET" class="navbar-form">
+                                            <div class="form-group">
+                                                <input type="text" placeholder="Search Products" name="q" class="form-control bg-silver-lighter" required />
+                                                <span class="input-group-btn">
+                                                    <button class="btn btn-inverse" type="submit"><i class="fa fa-search"></i></button>
+                                                </span>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <!-- END header-nav -->
+                    <!-- BEGIN header-nav -->
+                    <div class="header-nav">
+                        <ul class="nav pull-right">
+                            <li class="dropdown dropdown-hover">
+                                <a href="#" class="header-cart" data-toggle="dropdown">
+                                    <i class="fa fa-shopping-bag"></i>
+                                    <span class="total">{{ cart_count }}</span>
+                                    <span class="arrow top"></span>
+                                </a>
+
+                                <div class="dropdown-menu dropdown-menu-cart p-0">
+                                    <div class="cart-header">
+                                        <h4 class="cart-title">Shopping Bag ({{ cart_count }}) </h4>
+                                    </div>
+                                    <div class="cart-body">
+                                        <ul class="cart-item">
+                                            {% if not cart_items_header %}
+                                                <li class="text-center p-20">Your bag is empty</li>
+                                            {% else %}
+                                                {% for item in cart_items_header %}
+                                                    <li style="position: relative">
+                                                        <a href="{{ item.product.get_url }}">
+                                                            <div class="cart-item-image">
+                                                                <img src="{{ item.product.image.url }}" alt="" />
+                                                            </div>
+                                                            <div class="cart-item-info">
+                                                                <h4>{{ item.product.product_name }}</h4>
+                                                                <p class="price">
+                                                                    ${{ item.product.price }} x {{ item.quantity }}
+                                                                    {% if item.variations.all %}
+                                                                        <br><small>{% for v in item.variations.all %}{{ v.variation_value }} {% endfor %}</small>
+                                                                    {% endif %}
+
+                                                                </p>
+                                                            </div>
+                                                        </a>
+                                                        <div class="cart-item-close">
+                                                            <a href="{% url 'remove_cart' item.product.id item.id %}"
+                                                               class="close"
+                                                               onclick="return confirm('Remove this item?')"
+                                                               style="position: absolute; right: 10px; top: 10px; z-index: 10;"data-toggle="tooltip" data-title="Remove">&times;</a>
+                                                        </div>
+                                                    </li>
+                                                {% endfor %}
+                                                <div class="cart-footer">
+                                                    <div class="row row-space-10">
+                                                        <div class="col-xs-6">
+                                                            <a href="{% url 'checkout_cart' %}" class="btn btn-inverse btn-block">View Cart</a>
+                                                        </div>
+                                                        <div class="col-xs-6">
+                                                            <a href="{% url 'checkout_info' %}" class="btn btn-inverse btn-block">Checkout</a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            {% endif %}
+                                        </ul>
+                                    </div>
+                                </div>
+                            </li>
+                            <li class="divider"></li>
+                            <li class="dropdown">
+                                {% if user.is_authenticated %}
+                                    <a href="javascript:" data-toggle="dropdown" class="dropdown-toggle">
+                                        <span class="hidden-md">
+                                            {% if user.profile_pic %}
+                                                <img src="{{ user.profile_pic.url }}" class="img-circle" style="width: 30px; height: 30px; object-fit: cover;" alt="" />
+                                            {% else %}
+                                                <img src="{% static 'img/user-1.jpg' %}" class="img-circle" style="width: 30px; height: 30px;" alt="" />
+                                            {% endif %}
+                                        </span>
+                                        <span class="hidden-md">Hello, {{ user.username }}</span>
+                                        <b class="caret"></b>
+                                    </a>
+
+                                    <ul class="dropdown-menu">
+                                        <li><a href="{% url 'my_account' %}"><i class="fa fa-user fa-fw"></i> View Profile</a></li>
+                                        <li><a href="{% url 'profile_update' %}"><i class="fa fa-user fa-fw"></i> Update Profile</a></li>
+                                        <li class="divider"></li>
+                                        {% if user.is_authenticated %}
+                                            <li><a href="{% url 'manage_orders' %}">Manage Orders</a></li>
+                                        {% endif %}
+                                        <li class="divider"></li>
+                                        <li>
+                                            <form action="{% url 'logout' %}" method="post" style="display:inline;">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn-link" style="padding: 3px 20px; color: #333; text-decoration: none; width: 100%; text-align: left;">
+                                                    <i class="fa fa-sign-out fa-fw"></i> Logout
+                                                </button>
+                                            </form>
+                                        </li>
+                                    </ul>
+                                {% else %}
+                                    <a href="{% url 'login' %}">
+                                        <span class="hidden-md hidden-sm hidden-xs">Login / Register</span>
+                                    </a>
+                                {% endif %}
+                            </li>
+                        </ul>
+                    </div>
+                    <!-- END header-nav -->
+                </div>
+                <!-- END header-container -->
+            </div>
+            <!-- END container -->
+        </div>
+        <!-- END #header -->
+    </div>
+
+    <div id="content" class="content">
+        {% block content %}
+        {% endblock %}
+    </div>
+    <div>
+        <!--------------------------------------- footer section ------------------------------------------------------>
+        <!-- BEGIN #subscribe -->
+        <div id="subscribe" class="section-container bg-white p-t-30 p-b-30">
+            <!-- BEGIN container -->
+            <div class="container">
+                <!-- BEGIN row -->
+                <div class="row">
+                    <!-- BEGIN col-6 -->
+                    <div class="col-md-6 col-sm-6">
+                        <!-- BEGIN subscription -->
+                        <div class="subscription">
+                            <div class="subscription-intro">
+                                <h4> LET'S STAY IN TOUCH</h4>
+                                <p>Get updates on sales specials and more</p>
+                            </div>
+                            <div class="subscription-form">
+                                <form name="subscription_form" action="index.html" method="POST">
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" name="email" placeholder="Enter Email Address" />
+                                        <div class="input-group-btn">
+                                            <button type="submit" class="btn btn-inverse"><i class="fa fa-angle-right"></i></button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        <!-- END subscription -->
+                    </div>
+                    <!-- END col-6 -->
+                    <!-- BEGIN col-6 -->
+                    <div class="col-md-6 col-sm-6">
+                        <!-- BEGIN social -->
+                        <div class="social">
+                            <div class="social-intro">
+                                <h4>FOLLOW US</h4>
+                                <p>We want to hear from you!</p>
+                            </div>
+                            <div class="social-list">
+                                <a href="#"><i class="fa fa-facebook"></i></a>
+                                <a href="#"><i class="fa fa-twitter"></i></a>
+                                <a href="#"><i class="fa fa-instagram"></i></a>
+                                <a href="#"><i class="fa fa-dribbble"></i></a>
+                                <a href="#"><i class="fa fa-google-plus"></i></a>
+                            </div>
+                        </div>
+                        <!-- END social -->
+                    </div>
+                    <!-- END col-6 -->
+                </div>
+                <!-- END row -->
+            </div>
+            <!-- END container -->
+        </div>
+        <!-- END #subscribe -->
+
+        <!-- BEGIN #footer -->
+        <div id="footer" class="footer">
+            <!-- BEGIN container -->
+            <div class="container">
+                <!-- BEGIN row -->
+                <div class="row">
+                    <!-- BEGIN col-3 -->
+                    <div class="col-md-3">
+                        <h4 class="footer-header">ABOUT US</h4>
+                        <p>
+                            Welcome to my_ecommerce, your premier destination for the latest in mobile technology and digital accessories. Based in the Asia/Karachi region, we are dedicated to providing a seamless, secure, and high-quality shopping experience for tech enthusiasts.
+                        </p>
+                        <p>
+                            We are a team of passionate developers and retail experts specializing in modern e-commerce solutions. Our platform is built on the robust Django framework, ensuring that every transaction is handled with professional-grade logic and industry-standard security. We don't just sell products; we build a reliable bridge between cutting-edge technology and your doorstep.
+                        </p>
+                    </div>
+                    <!-- END col-3 -->
+                    <!-- BEGIN col-3 -->
+                    <div class="col-md-3">
+                        <h4 class="footer-header">RELATED LINKS</h4>
+                        <ul class="fa-ul">
+                            <li><i class="fa fa-li fa-angle-right"></i> <a href="#">Shopping Help</a></li>
+                            <li><i class="fa fa-li fa-angle-right"></i> <a href="#">Terms of Use</a></li>
+                            <li><i class="fa fa-li fa-angle-right"></i> <a href="#">Contact Us</a></li>
+                            <li><i class="fa fa-li fa-angle-right"></i> <a href="#">Careers</a></li>
+                            <li><i class="fa fa-li fa-angle-right"></i> <a href="#">Payment Method</a></li>
+                            <li><i class="fa fa-li fa-angle-right"></i> <a href="#">Sales & Refund</a></li>
+                            <li><i class="fa fa-li fa-angle-right"></i> <a href="#">Sitemap</a></li>
+                            <li><i class="fa fa-li fa-angle-right"></i> <a href="#">Privacy & Policy</a></li>
+                        </ul>
+                    </div>
+                    <!-- END col-3 -->
+                    <!-- BEGIN col-3 -->
+                    <div class="col-md-3">
+                        <h4 class="footer-header">LATEST PRODUCT</h4>
+                        <ul class="list-unstyled list-product">
+                            <li>
+                                <div class="image">
+                                    <img src="{% static 'img/iphone-6s.jpg' %}" alt="" />
+                                </div>
+                                <div class="info">
+                                    <h4 class="info-title">IPhone 6s</h4>
+                                    <div class="price">$1200.00</div>
+                                </div>
+                            </li>
+                            <li>
+                                <div class="image">
+                                    <img src="{% static 'img/galaxy-s6.jpg' %}" alt="" />
+                                </div>
+                                <div class="info">
+                                    <h4 class="info-title">Samsung Galaxy s7</h4>
+                                    <div class="price">$850.00</div>
+                                </div>
+                            </li>
+
+                            <li>
+                                <div class="image">
+                                    <img src="{% static 'img/ipad-pro.jpg' %}" alt="" />
+                                </div>
+                                <div class="info">
+                                    <h4 class="info-title">Ipad Pro</h4>
+                                    <div class="price">$800.00</div>
+                                </div>
+                            </li>
+                            <li>
+                                <div class="image">
+                                    <img src="{% static 'img/galaxy-note5.jpg' %}" alt="" />
+                                </div>
+                                <div class="info">
+                                    <h4 class="info-title">Samsung Galaxy Note 5</h4>
+                                    <div class="price">$1200.00</div>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                    <!-- END col-3 -->
+                    <!-- BEGIN col-3 -->
+                    <div class="col-md-3">
+                        <h4 class="footer-header">OUR CONTACT</h4>
+                        <address>
+                            <strong>Twitter, Inc.</strong><br />
+                            1355 Market Street, Suite 900<br />
+                            San Francisco, CA 94103<br /><br />
+                            <abbr title="Phone">Phone:</abbr> (+92) 456-7890<br />
+                            <abbr title="Fax">Fax:</abbr> (062) 456-7891<br />
+                            <abbr title="Email">Email:</abbr> <a href="mailto:sales@myshop.com">sales@mystore.com</a><br />
+                            <abbr title="Skype">Skype:</abbr> <a href="skype:myshop">mystore</a>
+                        </address>
+                    </div>
+                    <!-- END col-3 -->
+                </div>
+                <!-- END row -->
+            </div>
+            <!-- END container -->
+        </div>
+        <!-- END #footer -->
+
+        <!-- BEGIN #footer-copyright -->
+        <div id="footer-copyright" class="footer-copyright">
+            <!-- BEGIN container -->
+            <div class="container">
+                <div class="payment-method">
+                    <img src="{% static 'img/payment_method.png' %}" alt="" />
+                </div>
+                <div class="copyright">
+                    Copyright © 2026 My Store. Built with Python & Django. All Rights Reserved..
+                </div>
+            </div>
+            <!-- END container -->
+        </div>
+        <!-- END #footer-copyright -->
+    </div>
+    <!-- END #page-container -->
+
+    <!-- begin theme-panel -->
+    <div class="theme-panel">
+        <a href="javascript:" data-click="theme-panel-expand" class="theme-collapse-btn"><i class="fa fa-cog"></i></a>
+        <div class="theme-panel-content">
+            <ul class="theme-list clearfix">
+                <li><a href="javascript:" class="bg-purple" data-theme="purple" data-click="theme-selector" data-toggle="tooltip" data-trigger="hover" data-container="body" data-title="Purple">&nbsp;</a></li>
+                <li><a href="javascript:" class="bg-blue" data-theme="blue" data-click="theme-selector" data-toggle="tooltip" data-trigger="hover" data-container="body" data-title="Blue">&nbsp;</a></li>
+                <li class="active"><a href="javascript:" class="bg-green" data-theme="default" data-click="theme-selector" data-toggle="tooltip" data-trigger="hover" data-container="body" data-title="Default">&nbsp;</a></li>
+                <li><a href="javascript:" class="bg-orange" data-theme="orange" data-click="theme-selector" data-toggle="tooltip" data-trigger="hover" data-container="body" data-title="Orange">&nbsp;</a></li>
+                <li><a href="javascript:" class="bg-red" data-theme="red" data-click="theme-selector" data-toggle="tooltip" data-trigger="hover" data-container="body" data-title="Red">&nbsp;</a></li>
+            </ul>
+        </div>
+    </div>
+    <!-- end theme-panel -->
+
+    <script src="{% static 'plugins/jquery/jquery-1.9.1.min.js' %}"></script>
+    <script src="{% static 'plugins/jquery/jquery-migrate-1.1.0.min.js' %}"></script>
+    <script src="{% static 'plugins/bootstrap/js/bootstrap.min.js' %}"></script>
+   <!--[if lt IE 9]>
+		<script src="{% static 'crossbrowserjs/html5shiv.js' %}"></script>
+		<script src="{% static 'crossbrowserjs/respond.min.js' %}"></script>
+		<script src="{% static 'crossbrowserjs/excanvas.min.js' %}"></script>
+	<![endif]-->
+
+
+    <script src="{% static 'plugins/jquery-cookie/jquery.cookie.js' %}"></script>
+    <script src="{% static 'js/apps.min.js' %}"></script>
+    <script>
+        $(document).ready(function() {
+            App.init();
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

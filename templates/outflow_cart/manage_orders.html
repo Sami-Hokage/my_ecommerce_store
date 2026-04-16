@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="section-container">
+    <div class="container">
+        <h2 class="m-b-20">My Orders</h2>
+        <div class="table-responsive">
+            <table class="table table-bordered table-vcenter">
+                <thead>
+                    <tr>
+                        <th>Order #</th>
+                        <th>Date</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                    <tr>
+                        <td>{{ order.id }}</td>
+                        <td>{{ order.created_at|date:"d M Y" }}</td>
+                        <td>${{ order.order_total|floatformat:2 }}</td>
+                        <td>
+                            {% if order.status == 'Accepted' %}
+                                <span class="label label-success">Paid & Processing</span>
+                            {% elif order.status == 'Completed' %}
+                                <span class="label label-primary">Delivered</span>
+                            {% else %}
+                                <span class="label label-default">{{ order.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'my_order_detail' order.id %}?order_number={{ order.id }}" class="btn btn-sm btn-inverse">View Details</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center">You haven't placed any orders yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

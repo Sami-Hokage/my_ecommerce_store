@@ -1,0 +1,346 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+    <!-- BEGIN #page-container -->
+    <div id="page-container">
+        <!-- BEGIN #checkout-payment -->
+        <div class="section-container" id="checkout-payment">
+            <!-- BEGIN container -->
+            <div class="container">
+                <!-- BEGIN checkout -->
+                <div class="checkout">
+                    <form action="{% url 'checkout_payment' %}" method="POST" id="payment-form"  name="form-payment" class="form-horizontal">
+                        {% csrf_token %}
+
+                        <input type="hidden" name="stripeToken" id="stripeToken">
+
+                        <!-- BEGIN checkout-header -->
+                        <div class="checkout-header">
+                            <!-- BEGIN row -->
+                            <div class="row">
+                                <!-- BEGIN col-3 -->
+                                <div class="col-md-3 col-sm-3">
+                                    <div class="step">
+                                        <a href="{% url 'checkout_cart' %}">
+                                            <div class="number">1</div>
+                                            <div class="info">
+                                                <div class="title">Delivery Options</div>
+                                                <div class="desc"></div>
+                                            </div>
+                                        </a>
+                                    </div>
+                                </div>
+                                <!-- END col-3 -->
+                                <!-- BEGIN col-3 -->
+                                <div class="col-md-3 col-sm-3">
+                                    <div class="step">
+                                        <a href="{% url 'checkout_info' %}">
+                                            <div class="number">2</div>
+                                            <div class="info">
+                                                <div class="title">Shipping Address</div>
+                                                <div class="desc"></div>
+                                            </div>
+                                        </a>
+                                    </div>
+                                </div>
+                                <!-- END col-3 -->
+                                <!-- BEGIN col-3 -->
+                                <div class="col-md-3 col-sm-3">
+                                    <div class="step active">
+                                        <a href="{% url 'checkout_payment' %}">
+                                            <div class="number">3</div>
+                                            <div class="info">
+                                                <div class="title">Payment</div>
+                                                <div class="desc"></div>
+                                            </div>
+                                        </a>
+                                    </div>
+                                </div>
+                                <!-- END col-3 -->
+                                <!-- BEGIN col-3 -->
+                                <div class="col-md-3 col-sm-3">
+                                    <div class="step">
+                                        <a href="checkout_complete.html">
+                                            <div class="number">4</div>
+                                            <div class="info">
+                                                <div class="title">Complete Payment</div>
+                                                <div class="desc"></div>
+                                            </div>
+                                        </a>
+                                    </div>
+                                </div>
+                                <!-- END col-3 -->
+                            </div>
+                            <!-- END row -->
+                        </div>
+                        <!-- END checkout-header -->
+                        <!-- BEGIN checkout-body -->
+                        <div class="checkout-body">
+                            <div class="row">
+                                <div class="col-md-7">
+                                    <h4 class="checkout-title">Choose a payment method</h4>
+
+                                    <div class="form-group">
+                                        <label class="col-md-4 control-label">Cardholder Name <span class="text-danger">*</span></label>
+                                        <div class="col-md-8">
+                                            <input type="text" class="form-control" id="cardholder-name" name="cardholder" placeholder="Full Name" required />
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label class="col-md-4 control-label">Credit or Debit Card <span class="text-danger">*</span></label>
+                                        <div class="col-md-8">
+                                            <div id="card-element" class="form-control" style="height: 2.4em; padding-top: 7px; background: white;">
+
+                                            </div>
+
+                                            <div id="card-errors" role="alert" class="text-danger m-t-10" style="font-weight: bold;"></div>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group m-t-20">
+                                        <div class="col-md-8 col-md-offset-4">
+                                            <ul class="list-inline payment-type">
+                                                <li class="active"><i class="fa fa-cc-visa fa-2x"></i></li>
+                                                <li><i class="fa fa-cc-mastercard fa-2x"></i></li>
+                                                <li><i class="fa fa-cc-paypal fa-2x"></i></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-5">
+                                    <div class="checkout-sidebar" style="border-left: 1px solid #ddd; padding-left: 20px;">
+                                        <h4 class="checkout-title">Order Summary</h4>
+                                        <div class="table-responsive">
+                                            <table class="table table-payment-summary">
+                                                <tbody>
+                                                {% for item in cart_items %}
+                                                    <tr>
+                                                        <td class="product-img" style="width: 70px; vertical-align: middle;">
+                                                            {% if item.product.image %}
+                                                                <img src="{{ item.product.image.url }}" alt="{{ item.product.product_name }}" style="width: 60px; height: auto; border-radius: 4px; border: 1px solid #ddd;">
+                                                            {% else %}
+                                                                <div style="width: 60px; height: 60px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #999;">No Image</div>
+                                                            {% endif %}
+                                                        </td>
+                                                        <td class="field">
+                                                            <span class="text-inverse">{{ item.product.product_name }}</span><br />
+
+                                                            <small class="text-muted">
+                                                                {% if item.variations.all %}
+                                                                    {% for v in item.variations.all %}
+                                                                        {{ v.variation_category | capfirst }}: {{ v.variation_value | capfirst }}
+                                                                        {% if not forloop.last %}, {% endif %}
+                                                                    {% endfor %}
+                                                                {% endif %}
+                                                            </small>
+                                                            <br />
+                                                            <small>Qty: {{ item.quantity }}</small>
+                                                        </td>
+                                                        <td class="value">${{ item.sub_total }}</td>
+                                                    </tr>
+                                                {% endfor %}
+                                                <tr>
+                                                    <td class="field">Sub Total Amount</td>
+                                                    <td> </td>
+                                                    <td class="value"><strong>${{ total|floatformat:2 }}</strong></td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="field">Total Tax Amount</td>
+                                                    <td> </td>
+                                                    <td class="value">${{ tax|floatformat:2 }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="field">Total Amount</td>
+                                                    <td> </td>
+                                                    <td class="value"><strong>${{ grand_total|floatformat:2 }}</strong></td>
+                                                </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                        <div class="alert alert-info m-t-20">
+                                            <h5>Shipping Details</h5>
+                                            <p class="m-b-0">
+                                                {{ order.first_name }} {{ order.last_name }}<br />
+                                                {{ order.address_line_1 }}<br />
+                                                {{ order.city }}, {{ order.country }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- END checkout-body -->
+                        <!-- BEGIN checkout-footer -->
+                        <div class="checkout-footer">
+                            <a href="{% url 'checkout_info' %}" class="btn btn-white btn-lg pull-left">Back</a>
+                            <button type="submit" class="btn btn-inverse btn-lg p-l-30 p-r-30 m-l-10">Proceed</button>
+                        </div>
+                        <!-- END checkout-footer -->
+                    </form>
+                </div>
+                <!-- END checkout -->
+                
+                <h4 class="checkout-title m-t-30 m-b-15">Payment Frequently Asked Questions</h4>
+                <!-- BEGIN checkout-question-list -->
+                <div class="row checkout-question-list" id="checkout-faq">
+                    <!-- BEGIN col-6 -->
+                    <div class="col-md-6">
+                        <div class="clearfix">
+                            <div class="question">
+                                <a href="#checkout-faq-1" class="collapsed" data-toggle="collapse" data-parent="#checkout-faq">
+                                    <span class="dash">-</span> Is my Credit Card / Debit Card details protected?
+                                </a>   
+                            </div>
+                            <div class="answer collapse in" id="checkout-faq-1">
+                                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam hendrerit, felis vel tincidunt sodales, urna metus rutrum leo, sit amet finibus velit ante nec lacus. Cras erat nunc, pulvinar nec leo at, rhoncus elementum orci. Nullam ut sapien ultricies, gravida ante ut, ultrices nunc.
+                            </div> 
+                        </div>
+                        <div class="clearfix m-t-10">
+                            <div class="question">
+                                <a href="#checkout-faq-2" class="collapsed" data-toggle="collapse" data-parent="#checkout-faq">
+                                    <span class="dash">-</span> Can I use a Debit Card to make payment??
+                                </a>   
+                            </div>
+                            <div class="answer collapse in" id="checkout-faq-2">
+                                Curabitur vitae venenatis odio, eget molestie mauris. Nullam vitae turpis at mi consequat rutrum quis quis mi. Vestibulum imperdiet neque non libero condimentum, quis sodales magna molestie. Interdum et malesuada fames ac ante ipsum primis in faucibus. 
+                            </div> 
+                        </div>
+                        <div class="clearfix m-t-10">
+                            <div class="question">
+                                <a href="#checkout-faq-3" class="collapsed" data-toggle="collapse" data-parent="#checkout-faq">
+                                    <span class="dash">-</span> Credit Card/Debit Card transaction keep failing. Why?
+                                </a>   
+                            </div>
+                            <div class="answer collapse in" id="checkout-faq-3">
+                                Cras malesuada mi quis purus pharetra egestas. Curabitur auctor sapien est, eu porttitor velit ornare in. Fusce porta suscipit diam at placerat. Donec lobortis iaculis accumsan. Ut semper felis vel nisi aliquam facilisis.
+                            </div> 
+                        </div>
+                    </div>
+                    <!-- END col-6 -->
+                    <!-- BEGIN col-6 -->
+                    <div class="col-md-6">
+                        <div class="clearfix">
+                            <div class="question">
+                                <a href="#checkout-faq-4" class="collapsed" data-toggle="collapse" data-parent="#checkout-faq">
+                                    <span class="dash">-</span> Did not receive the Pin Code on my mobile?
+                                </a>   
+                            </div>
+                            <div class="answer collapse in" id="checkout-faq-4">
+                                Duis gravida sem eu arcu efficitur, laoreet egestas nibh posuere. Pellentesque suscipit tincidunt porttitor. Aliquam vitae massa vel justo lobortis posuere. Nulla tempor enim at auctor dignissim. Aenean sit amet venenatis odio.
+                            </div> 
+                        </div>
+                        <div class="clearfix m-t-10">
+                            <div class="question">
+                                <a href="#checkout-faq-5" class="collapsed" data-toggle="collapse" data-parent="#checkout-faq">
+                                    <span class="dash">-</span> My credit card has been charged, but my order shows failed?
+                                </a>   
+                            </div>
+                            <div class="answer collapse in" id="checkout-faq-5">
+                                Nunc consectetur tellus libero, at tempor dolor scelerisque id. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc feugiat ligula vitae tincidunt sagittis. Etiam congue ligula purus, ut fringilla ante interdum eu.
+                            </div> 
+                        </div>
+                    </div>
+                    <!-- END col-6 -->
+                </div>
+                <!-- END checkout-question-list -->
+            </div>
+            <!-- END container -->
+        </div>
+        <!-- END #checkout-payment -->
+    
+        <!-- BEGIN #policy -->
+        <div id="policy" class="section-container p-t-30 p-b-30 bg-white">
+            <!-- BEGIN container -->
+            <div class="container">
+                <!-- BEGIN row -->
+                <div class="row">
+                    <!-- BEGIN col-4 -->
+                    <div class="col-md-4 col-sm-4">
+                        <!-- BEGIN policy -->
+                        <div class="policy">
+                            <div class="policy-icon"><i class="fa fa-truck"></i></div>
+                            <div class="policy-info">
+                                <h4>Free Delivery Over $100</h4>
+                                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+                            </div>
+                        </div>
+                        <!-- END policy -->
+                    </div>
+                    <!-- END col-4 -->
+                    <!-- BEGIN col-4 -->
+                    <div class="col-md-4 col-sm-4">
+                        <!-- BEGIN policy -->
+                        <div class="policy">
+                            <div class="policy-icon"><i class="fa fa-shield"></i></div>
+                            <div class="policy-info">
+                                <h4>1 Year Warranty For Phones</h4>
+                                <p>Cras laoreet urna id dui malesuada gravida. <br />Duis a lobortis dui.</p>
+                            </div>
+                        </div>
+                        <!-- END policy -->
+                    </div>
+                    <!-- END col-4 -->
+                    <!-- BEGIN col-4 -->
+                    <div class="col-md-4 col-sm-4">
+                        <!-- BEGIN policy -->
+                        <div class="policy">
+                            <div class="policy-icon"><i class="fa fa-user-md"></i></div>
+                            <div class="policy-info">
+                                <h4>6 Month Warranty For Accessories</h4>
+                                <p>Fusce ut euismod orci. Morbi auctor, sapien non eleifend iaculis.</p>
+                            </div>
+                        </div>
+                        <!-- END policy -->
+                    </div>
+                    <!-- END col-4 -->
+                </div>
+                <!-- END row -->
+            </div>
+            <!-- END container -->
+        </div>
+        <!-- END #footer-copyright -->
+    </div>
+    <!-- END #page-container -->
+
+    // this script is for payment processing purposes (for stripe)
+
+    <script src="https://js.stripe.com/v3/"></script>
+
+    <script>
+
+        var stripe = Stripe('pk_test_51TM6fGREXU3B8NhsIm5WMkTyH5Fyow61ReQn3YyXxiNIzJhfVBdx3UTPnlvk9nEjwcw3nOVe5ykBn427GxHSV7Mk00JZUHWomf');
+        var elements = stripe.elements();
+
+
+        var card = elements.create('card');
+        card.mount('#card-element');
+
+        var form = document.getElementById('payment-form');
+
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            stripe.createToken(card).then(function(result) {
+                if (result.error) {
+                    // Inform the user if there was an error (e.g., invalid card)
+                    var errorElement = document.getElementById('card-errors');
+                    errorElement.textContent = result.error.message;
+                } else {
+                    // Send the token to your server
+                    stripeTokenHandler(result.token);
+                }
+            });
+        });
+
+        function stripeTokenHandler(token) {
+            var form = document.getElementById('payment-form');
+            var hiddenInput = document.getElementById('stripeToken');
+            hiddenInput.setAttribute('value', token.id);
+            form.submit();
+        }
+
+    </script>
+
+{% endblock %}

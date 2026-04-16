@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="section-container" xmlns="http://www.w3.org/1999/html">
+    <div class="container">
+        <div class="checkout-header">
+            <div class="row">
+            <h4 class="text-white">Order Details: #{{ order.id }} <small class="pull-right text-white">Date: {{ order.created_at }}</small></h4>
+            </div>
+        </div>
+
+        <div class="checkout-body">
+            <div class="table-responsive">
+                <table class="table table-cart">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th class="text-center">Price</th>
+                            <th class="text-center">Quantity</th>
+                            <th class="text-right">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in order_items %}
+                        <tr>
+                            <td class="cart-product">
+                                <div class="product-img">
+                                    <img src="{{ item.product.image.url }}" alt="{{ item.product.product_name }}" />
+                                </div>
+                                <div class="product-info">
+                                    <div class="title">{{ item.product.product_name }}</div>
+                                    <div class="desc">
+                                        {% if item.variations.all %}
+                                            {% for v in item.variations.all %}
+                                                {{ v.variation_category | capfirst }} : {{ v.variation_value | capfirst }} <br>
+                                            {% endfor %}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-center">${{ item.product_price|floatformat:2 }}</td>
+                            <td class="text-center">{{ item.quantity }}</td>
+                            <td class="text-right">${{ item.sub_total|floatformat:2 }}</td> </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot style="border-top: 2px solid #333;">
+                    <tr>
+                        <td colspan="4"></td>
+                    </tr>
+                    </tfoot>
+                </table>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Ordered by</h5>
+                    <p><strong>{{ order.first_name }} {{ order.last_name }}<br> </strong></p>
+                    <h5>Shipping Address</h5>
+                    <p>
+                        {{ order.address_line_1 }} {{ order.address_line_2 }}<br>
+                        {{ order.city }}, {{ order.country }} - {{ order.zip_code }}<br>
+                        Phone: {{ order.phone }}
+                    </p>
+                    <h5>This order will be delivered in <strong>5</strong> working days</h5>
+                </div>
+                <div class="col-md-6 text-right">
+                    <h4>Sub Total: <strong>${{ order.get_order_total_without_tax|floatformat:2 }}</strong></h4>
+                </div>
+                <div class="col-md-6 text-right">
+                    <h4>Tax Total: ${{ order.tax|floatformat:2 }}</h4>
+                </div>
+                <div class="col-md-6 text-right">
+                    <h4>Grand Total: <strong>${{ order.order_total|floatformat:2 }}</strong></h4>
+                    <p>Status: <span class="label label-primary">{{ order.status }}</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

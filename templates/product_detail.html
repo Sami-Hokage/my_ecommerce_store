@@ -1,0 +1,875 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+    <div id="content" class="content">
+        <div id="product" class="section-container p-t-20">
+            <div class="container">
+                <ul class="breadcrumb m-b-10 f-s-12">
+                    <li><a href="{% url 'home' %}">Home</a></li>
+                    <li>
+                        {% if product.category and product.category.slug %}
+                            <a href="{% url 'category_products' product.category.slug %}">
+                                {{ product.category.category_name }}
+                            </a>
+                        {% else %}
+                            <a href="{% url 'products' %}">Products</a>
+                        {% endif %}
+                    </li>
+                    <li class="active">{{ product.product_name }}</li>
+                </ul>
+                <div class="product">
+                    <div class="product-detail">
+                        <div class="product-image">
+                            <div class="product-thumbnail">
+                                <ul class="product-thumbnail-list">
+                                    <li class="active">
+                                        <a href="javascript:;" data-click="show-main-image" data-url="{{ product.image.url }}">
+                                            <img src="{{ product.image.url }}" alt="{{ product.product_name }}" />
+                                        </a>
+                                    </li>
+
+                                    {% for extra in product.images.all %}
+                                        <li>
+                                            <a href="javascript:;" data-click="show-main-image" data-url="{{ extra.image.url }}">
+                                                <img src="{{ extra.image.url }}" alt="{{ product.product_name }}" />
+                                            </a>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            <div class="product-main-image" data-id="main-image">
+                                <img src="{{ product.image.url }}" alt="{{ product.product_name }}"/>
+                            </div>
+                        </div>
+                        <div class="product-info">
+                            <div class="product-info-header">
+                                <h1 class="product-title">
+                                    {% if product.discount_price %}
+                                        <span class="label label-success">SALE</span>
+                                    {% endif %}
+                                    {{ product.product_name }}
+                                </h1>
+                                <ul class="product-category">
+
+                                    <li><a href="{% url 'home' %}">Home</a> </li>
+
+                                    <li>/</li>
+
+                                    {% if product.brand and product.brand.slug %}
+                                        <li><a href="{% url 'brand_products' product.brand.slug %}">{{ product.brand.brand_name }}</a></li>
+                                    {% else %}
+                                        <li>No Brand</li>
+                                    {% endif %}
+
+                                    <li>/</li>
+
+                                    {% if product.category and product.category.slug %}
+                                        <li><a href="{% url 'category_products' product.category.slug %}">{{ product.category.category_name }}</a></li>
+                                    {% else %}
+                                        <li>No Category</li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+
+                            <div class="product-warranty">
+                                <div class="pull-right">
+                                    Availability:
+                                    {% if product.total_stock > 0 %}
+                                        <span class="text-success">In stock</span>
+                                    {% else %}
+                                        <span class="text-danger">Out of Stock</span>
+                                    {% endif %}
+                                </div>
+                                <div><b>1 Year</b> Local Manufacturer Warranty</div>
+                            </div>
+
+                            <ul class="product-info-list">
+                                {% for point in product.specification.splitlines %}
+                                    {% if point.strip %}
+                                        <li><i class="fa fa-circle"></i> {{ point }}</li>
+                                    {% endif %}
+                                {% endfor %}
+                            </ul>
+
+                            <div class="product-purchase-container">
+                                {% if product.discount_price %}
+                                    <div class="product-discount">
+                                        <span class="discount">${{ product.price }}</span>
+                                    </div>
+                                    <div class="product-price">
+                                        <div class="price">${{ product.discount_price }}</div>
+                                    </div>
+                                {% else %}
+                                    <div class="product-price">
+                                        <div class="price">${{ product.price }}</div>
+                                    </div>
+                                {% endif %}
+                                <form action="{% url 'add_cart' product.id %}" method="POST">
+                                    {% csrf_token %}
+
+                                    <div class="row">
+                                        <div class="item-option">
+                                            <h4 class="m-b-10">Select Color</h4>
+                                            <select name="color" id="color-select" class="form-control" required>
+                                                <option value="" disabled selected>— Choose Color —</option>
+                                                {% for color in colors %}
+                                                    <option value="{{ color.variation_value | lower }}" data-stock="{{ color.stock }}">
+                                                        {{ color.variation_value | capfirst }}
+                                                        {% if color.stock <= 0 %}(Out of Stock){% endif %}
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <hr />
+
+                                    <div class="item-cart">
+                                        <button type="submit" id="cart-button" class="btn btn-inverse btn-block">
+                                            <i class="fa fa-shopping-cart"></i> Add to Cart
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        </div>
+                    <div class="product-tab">
+                        <ul id="product-tab" class="nav nav-tabs">
+                            <li class="active"><a href="#product-desc" data-toggle="tab">Product Description</a></li>
+                            <li class=""><a href="#product-info" data-toggle="tab">Additional Information</a></li>
+                            <li class=""><a href="#product-reviews" data-toggle="tab">Rating & Reviews ({{ product.reviews.count }})</a></li>
+
+                        </ul>
+                        <div id="product-tab-content" class="tab-content">
+                            <div class="tab-pane fade active in" id="product-desc">
+                                {%  for section in product.description_sections.all %}
+                                    <div class="product-desc {% if forloop.counter|divisibleby:2 %}right{% endif %}">
+                                        <div class="image">
+                                            {%  if section.img %}
+                                                <img src="{{ section.image.url }}" alt="{{ section.title }}"/>
+                                            {% else %}
+                                                {# Optional: Placeholder image if no image exists #}
+                                                <img src="/static/images/default-placeholder.png" alt="No image available">
+                                            {% endif %}
+                                        </div>
+                                        <div class="desc">
+                                            <h4>{{ section.title}}</h4>
+                                            <p>{{ section.description }}</p>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            <!-- BEGIN #product-info -->
+                            <div class="tab-pane fade" id="product-info">
+                                <div class="table-responsive">
+                                    <table class="table table-product table-striped">
+                                        <thead>
+                                        <tr>
+                                            <th></th>
+                                            <th>{{ product.product_name }}</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        {% for info in product.additional_info.all %}
+                                            <tr>
+                                                <td class="field">{{ info.label }}</td>
+
+                                                {% if info.is_full_width %}
+                                                    <td colspan="2">
+                                                        {{ info.column_one_content|linebreaksbr }}
+                                                    </td>
+                                                {% else %}
+                                                    <td>{{ info.column_one_content|linebreaksbr }}</td>
+                                                {% endif %}
+                                            </tr>
+                                        {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <!-- END #product-info -->
+
+                            <!-- BEGIN #product-reviews -->
+                            <div class="tab-pane fade" id="product-reviews">
+                                <div class="row row-space-30">
+                                    <div class="col-md-7">
+                                        {% for review in product.reviews.all %}
+                                            <div class="review">
+                                                <div class="review-info">
+                                                    <div class="review-icon">
+                                                        {# Using static placeholder for user icon as seen in the theme #}
+                                                        {% if user.profile_pic %}
+                                                <img src="{{ user.profile_pic.url }}" class="img-circle" style="width: 30px; height: 30px; object-fit: cover;" />
+                                            {% else %}
+                                                <img src="{% static 'img/user/user-1.jpg' %}" class="img-circle" style="width: 30px; height: 30px;" />
+                                            {% endif %}
+                                                    </div>
+                                                    <div class="review-rate">
+                                                        <ul class="review-star">
+                                                            {# Dynamic star coloring logic #}
+                                                            {% for i in "12345" %}
+                                                                {% if review.rating >= forloop.counter %}
+                                                                    <li class="active"><i class="fa fa-star"></i></li>
+                                                                {% else %}
+                                                                    <li class=""><i class="fa fa-star-o"></i></li>
+                                                                {% endif %}
+                                                            {% endfor %}
+                                                        </ul>
+                                                        ({{ review.rating }}/5)
+                                                    </div>
+                                                    <div class="review-name">{{ review.name }}</div>
+                                                    <div class="review-date">{{ review.created_at|date:"d/m/Y g:ia" }}</div>
+                                                </div>
+                                                <div class="review-title">
+                                                    {{ review.subject }}
+                                                </div>
+                                                <div class="review-message">
+                                                    {{ review.message }}
+                                                </div>
+                                            </div>
+                                        {% empty %}
+                                            <p class="p-20">No reviews yet. Be the first to write one!</p>
+                                        {% endfor %}
+                                    </div>
+                                    <div class="col-md-5">
+                                        <div class="review-form">
+                                            {# Points to a named URL for submission #}
+                                            {% if product.id %}
+                                                <form action="{% url 'submit_review' product.id %}" name="review_form" method="POST">
+                                                    {% csrf_token %}
+                                                    <h2>Write a review</h2>
+
+                                                    <div class="form-group">
+                                                        <label for="name">Name <span class="text-danger">*</span></label>
+                                                        <input type="text" name="name" class="form-control" id="name" required />
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label for="subject">Title <span class="text-danger">*</span></label>
+                                                        <input type="text" name="subject" class="form-control" id="subject" required />
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label for="review">Review <span class="text-danger">*</span></label>
+                                                        <textarea name="message" class="form-control" rows="8" id="review" required></textarea>
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label>Rating <span class="text-danger">*</span></label>
+                                                        <div class="rating rating-selection" data-rating="true" data-target="rating">
+                                                            {# These classes trigger the theme's interactive star selector #}
+                                                            <i class="fa fa-star-o" data-value="1"></i>
+                                                            <i class="fa fa-star-o" data-value="2"></i>
+                                                            <i class="fa fa-star-o" data-value="3"></i>
+                                                            <i class="fa fa-star-o" data-value="4"></i>
+                                                            <i class="fa fa-star-o" data-value="5"></i>
+                                                            <span class="rating-comment">
+                                                                <span class="rating-comment-tooltip">Click to rate</span>
+                                                            </span>
+                                                        </div>
+                                                        {# Hidden select that the theme's JS will update #}
+                                                        <select name="rating" id="rating" class="hide">
+                                                            <option value="1">1</option>
+                                                            <option value="2">2</option>
+                                                            <option value="3">3</option>
+                                                            <option value="4">4</option>
+                                                            <option value="5">5</option>
+                                                        </select>
+                                                    </div>
+                                                    <button type="submit" class="btn btn-inverse btn-lg">Submit Review</button>
+                                                </form>
+                                            {% else %}
+                                                <p class="text-danger">Error: Product ID not found. Please reload the page from the shop list.</p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- END #product-reviews -->
+                        </div>
+                    </div>
+                    </div>
+                <h4 class="m-t-20">You Might Also Like</h4>
+                <div class="row row-space-10">
+                    {% for similar in similar_products %}
+                        <div class="col-md-2 col-sm-4">
+                            <div class="item item-thumbnail">
+                                <a href="{% url 'product_detail' similar.category.slug similar.slug %}" class="item-image">
+                                    {% if similar.image %}
+                                        <img src="{{ similar.image.url }}" alt="" />
+                                    {% else %}
+                                        <img src="{% static 'assets/img/placeholder.png' %}" alt="" />
+                                    {% endif %}
+                                </a>
+                                <div class="item-info">
+                                    <h4 class="item-title">
+                                        <a href="{% url 'product_detail' similar.category.slug similar.slug %}">{{ similar.product_name }}</a>
+                                    </h4>
+                                    <div class="item-price">${{ similar.price }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+<script>
+    function changeImage(src) {
+        document.getElementById('main-img').src = src;
+
+        // Optional: Add a highlight to the active thumbnail
+        const thumbnails = document.querySelectorAll('.thumbnail');
+        thumbnails.forEach(img => img.style.border = "1px solid #ddd");
+        event.target.style.border = "2px solid #f59c1a";
+    }
+</script>
+<script>
+    document.querySelectorAll('#product-rating i').forEach(star => {
+        star.addEventListener('click', function() {
+            const val = this.getAttribute('data-value');
+            document.getElementById('rating-value').value = val;
+
+            // Toggle the stars visually
+            document.querySelectorAll('#product-rating i').forEach(s => {
+                if(s.getAttribute('data-value') <= val) {
+                    s.classList.replace('fa-star-o', 'fa-star');
+                } else {
+                    s.classList.replace('fa-star', 'fa-star-o');
+                }
+            });
+        });
+    });
+</script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const colorSelect = document.getElementById('color-select');
+        const cartButton = document.getElementById('cart-button');
+
+        colorSelect.addEventListener('change', function() {
+            // Get the selected option and its stock value
+            const selectedOption = this.options[this.selectedIndex];
+            const stock = parseInt(selectedOption.getAttribute('data-stock'));
+
+            if (stock > 0) {
+                // Style for "In Stock"
+                cartButton.innerHTML = '<i class="fa fa-shopping-cart"></i> Add to Cart';
+                cartButton.classList.remove('btn-danger');
+                cartButton.classList.add('btn-inverse');
+                cartButton.disabled = false;
+            } else {
+                // Style for "Out of Stock"
+                cartButton.innerHTML = 'Out of Stock';
+                cartButton.classList.remove('btn-inverse');
+                cartButton.classList.add('btn-danger');
+                cartButton.disabled = true;
+            }
+        });
+    });
+    </script>
+{% endblock %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+{% comment %}
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+    <!-- BEGIN #page-container -->
+    <div id="page-container">
+        <!-- BEGIN #top-nav -->
+        <div id="top-nav" class="top-nav">
+        
+        <!-- BEGIN #product -->
+        <div id="product" class="section-container p-t-20">
+            <!-- BEGIN container -->
+            <div class="container">
+                <!-- BEGIN breadcrumb -->
+                <ul class="breadcrumb m-b-10 f-s-12">
+                    <li><a href="{% url 'home' %}">Home</a></li>
+                    <li>
+                        {# Check if the product actually has a category before trying to link to it #}
+                        {% if product.category %}
+                            <a href="{% url 'category_products' product.category.slug %}">
+                                {{ product.category.category_name }}
+                            </a>
+                        {% else %}
+                            {# Fallback link if no category exists #}
+                            <a href="{% url 'products' %}">Products</a>
+
+                        {% endif %}
+                    </li>
+                    <li class="active">{{ product.product_name }}</li>
+                </ul>
+                <!-- END breadcrumb -->
+
+                <!-- BEGIN product -->
+                <div class="product">
+                    <!-- BEGIN product-detail -->
+                    <div class="product-detail">
+                        <!-- BEGIN product-image -->
+                        <div class="product-image">
+                            <!-- BEGIN product-thumbnail -->
+                            <div class="product-thumbnail">
+                                <ul class="product-thumbnail-list">
+                                    <li class="active"><a href="#" data-click="show-main-image" data-url="assets/img/iphone-6s-plus-2.jpg"><img src="assets/img/iphone-6s-plus-2.jpg" alt="" /></a></li>
+                                    <li><a href="#" data-click="show-main-image" data-url="assets/img/iphone-6s-plus-3.jpg"><img src="assets/img/iphone-6s-plus-3.jpg" alt="" /></a></li>
+                                    <li><a href="#" data-click="show-main-image" data-url="assets/img/iphone-6s-plus-4.jpg"><img src="assets/img/iphone-6s-plus-4.jpg" alt="" /></a></li>
+                                    <li><a href="#" data-click="show-main-image" data-url="assets/img/iphone-6s-plus-5.jpg"><img src="assets/img/iphone-6s-plus-5.jpg" alt="" /></a></li>
+                                    <li><a href="#" data-click="show-main-image" data-url="assets/img/iphone-6s-plus-6.jpg"><img src="assets/img/iphone-6s-plus-6.jpg" alt="" /></a></li>
+                                    <li><a href="#" data-click="show-main-image" data-url="assets/img/iphone-6s-plus-7.jpg"><img src="assets/img/iphone-6s-plus-7.jpg" alt="" /></a></li>
+                                </ul>
+                            </div>
+                            <!-- END product-thumbnail -->
+                            <!-- BEGIN product-main-image -->
+                            <div class="product-main-image" data-id="main-image">
+                                <img src="assets/img/iphone-6s-plus.png" alt="" />
+                            </div>
+                            <!-- END product-main-image -->
+                        </div>
+                        <!-- END product-image -->
+                        <!-- BEGIN product-info -->
+                        <div class="product-info">
+                            <!-- BEGIN product-info-header -->
+                            <div class="product-info-header">
+                                <h1 class="product-title">
+                                    {% if product.discount_price %}
+                                        <span class="label label-success">SALE</span>
+                                    {% endif %}
+                                    {{ product.product_name }}
+                                </h1>
+                                <ul class="product-category">
+                                    {# SAFE CATEGORY LINK #}
+                                    {% if product.category and product.category.slug %}
+                                        <li><a href="{% url 'category_products' product.category.slug %}">{{ product.category.category_name }}</a></li>
+                                    {% else %}
+                                        <li>No Category</li>
+                                    {% endif %}
+
+                                    <li>/</li>
+
+                                    {# SAFE BRAND LINK #}
+                                    {% if product.brand and product.brand.slug %}
+                                        <li><a href="{% url 'brand_products' product.brand.slug %}">{{ product.brand.brand_name }}</a></li>
+                                    {% else %}
+                                        <li>No Brand</li>
+                                    {% endif %}
+
+                                    <li>/</li>
+
+                                    {# FIXED: Removed the invalid products link that caused a loop #}
+                                    <li class="active">{{ product.product_name }}</li>
+                                </ul>
+                            </div>
+                            <!-- END product-info-header -->
+                            <!-- BEGIN product-warranty -->
+                            <div class="product-warranty">
+                                <div class="pull-right">Availability: In stock</div>
+                                <div><b>1 Year</b> Local Manufacturer Warranty</div>
+                            </div>
+                            <!-- END product-warranty -->
+                            <!-- BEGIN product-info-list -->
+                            <ul class="product-info-list">
+                                <li><i class="fa fa-circle"></i> 5.5" Retina HD Display with 3D Touch</li>
+                                <li><i class="fa fa-circle"></i> Fingerprint-resistant oleophobic coating</li>
+                                <li><i class="fa fa-circle"></i> A9 chip with 64-bit</li>
+                                <li><i class="fa fa-circle"></i> Ultrafast 4G LTE Advanced wireless</li>
+                                <li><i class="fa fa-circle"></i> New 12-megapixel iSight camera</li>
+                                <li><i class="fa fa-circle"></i> 4k video recording</li>
+                                <li><i class="fa fa-circle"></i> iOS 9 with Touch ID and Apple Pay</li>
+                            </ul>
+                            <!-- END product-info-list -->
+                            <!-- BEGIN product-social -->
+                            <div class="product-social">
+                                <ul>
+                                    <li><a href="javascript:;" class="facebook" data-toggle="tooltip" data-trigger="hover" data-title="Facebook" data-placement="top"><i class="fa fa-facebook"></i></a></li>
+                                    <li><a href="javascript:;" class="twitter" data-toggle="tooltip" data-trigger="hover" data-title="Twitter" data-placement="top"><i class="fa fa-twitter"></i></a></li>
+                                    <li><a href="javascript:;" class="google-plus" data-toggle="tooltip" data-trigger="hover" data-title="Google Plus" data-placement="top"><i class="fa fa-google-plus"></i></a></li>
+                                    <li><a href="javascript:;" class="whatsapp" data-toggle="tooltip" data-trigger="hover" data-title="Whatsapp" data-placement="top"><i class="fa fa-whatsapp"></i></a></li>
+                                    <li><a href="javascript:;" class="tumblr" data-toggle="tooltip" data-trigger="hover" data-title="Tumblr" data-placement="top"><i class="fa fa-tumblr"></i></a></li>
+                                </ul>
+                            </div>
+                            <!-- END product-social -->
+                            <!-- BEGIN product-purchase-container -->
+                            <div class="product-purchase-container">
+                                {% if product.discount_price %}
+                                    <div class="product-discount">
+                                        <span class="discount">${{ product.price }}</span>
+                                    </div>
+                                    <div class="product-price">
+                                        <div class="price">${{ product.discount_price }}</div>
+                                    </div>
+                                {% else %}
+                                    <div class="product-price">
+                                        <div class="price">${{ product.price }}</div>
+                                    </div>
+                                {% endif %}
+                                <button class="btn btn-inverse btn-lg" type="submit">ADD TO CART</button>
+                            </div>
+                            <!-- END product-purchase-container -->
+                        </div>
+                        <!-- END product-info -->
+                    </div>
+                    <!-- END product-detail -->
+                    <!-- BEGIN product-tab -->
+                    <div class="product-tab">
+                        <!-- BEGIN #product-tab -->
+                        <ul id="product-tab" class="nav nav-tabs">
+                            <li class="active"><a href="#product-desc" data-toggle="tab">Product Description</a></li>
+                            <li class=""><a href="#product-info" data-toggle="tab">Additional Information</a></li>
+                            <li class=""><a href="#product-reviews" data-toggle="tab">Rating & Reviews (5)</a></li>
+                        </ul>
+                        <!-- END #product-tab -->
+                        <!-- BEGIN #product-tab-content -->
+                        <div id="product-tab-content" class="tab-content">
+                            <!-- BEGIN #product-desc -->
+                            <div class="tab-pane fade active in" id="product-desc">
+                                <!-- BEGIN product-desc -->
+                                <div class="product-desc">
+                                    <div class="image">
+                                        <img src="assets/img/product-main.jpg" alt="" />
+                                    </div>
+                                    <div class="desc">
+                                        <h4>iPhone 6s</h4>
+                                        <p>
+                                            The moment you use iPhone 6s, you know you’ve never felt anything like it. With a single press, 3D Touch lets you do more than ever before. Live Photos bring your memories to life in a powerfully vivid way. And that’s just the beginning. Take a deeper look at iPhone 6s, and you’ll find innovation on every level.
+                                        </p>
+                                    </div>
+                                </div>
+                                <!-- END product-desc -->
+                                <!-- BEGIN product-desc -->
+                                <div class="product-desc right">
+                                    <div class="image">
+                                        <img src="assets/img/product-3dtouch.jpg" alt="" />
+                                    </div>
+                                    <div class="desc">
+                                        <h4>3D Touch</h4>
+                                        <p>
+                                            The original iPhone introduced the world to Multi-Touch, forever changing the way people experience technology. With 3D Touch, you can do things that were never possible before. It senses how deeply you press the display, letting you do all kinds of essential things more quickly and simply. And it gives you real-time feedback in the form of subtle taps from the all-new Taptic Engine.
+                                        </p>
+                                    </div>
+                                </div>
+                                <!-- END product-desc -->
+                                <!-- BEGIN product-desc -->
+                                <div class="product-desc">
+                                    <div class="image">
+                                        <img src="assets/img/product-cameras.jpg" alt="" />
+                                    </div>
+                                    <div class="desc">
+                                        <h4>Cameras</h4>
+                                        <p>
+                                            The 12-megapixel iSight camera captures sharp, detailed photos. It takes brilliant 4K video, up to four times the resolution of 1080p HD video. iPhone 6s also takes selfies worthy of a self-portrait with the new 5-megapixel FaceTime HD camera. And it introduces Live Photos, a new way to relive your favorite memories. It captures the moments just before and after your picture and sets it in motion with just the press of a finger.
+                                        </p>
+                                    </div>
+                                </div>
+                                <!-- END product-desc -->
+                                <!-- BEGIN product-desc -->
+                                <div class="product-desc right">
+                                    <div class="image">
+                                        <img src="assets/img/product-technology.jpg" alt="" />
+                                    </div>
+                                    <div class="desc">
+                                        <h4>Technology</h4>
+                                        <p>
+                                            iPhone 6s is powered by the custom-designed 64-bit A9 chip. It delivers performance once found only in desktop computers. You’ll experience up to 70 percent faster CPU performance, and up to 90 percent faster GPU performance for all your favorite graphics-intensive games and apps.
+                                        </p>
+                                    </div>
+                                </div>
+                                <!-- END product-desc -->
+                                <!-- BEGIN product-desc -->
+                                <div class="product-desc">
+                                    <div class="image">
+                                        <img src="assets/img/product-design.jpg" alt="" />
+                                    </div>
+                                    <div class="desc">
+                                        <h4>Design</h4>
+                                        <p>
+                                            Innovation isn’t always obvious to the eye, but look a little closer at iPhone 6s and you’ll find it’s been fundamentally improved. The enclosure is made from a new alloy of 7000 Series aluminum — the same grade used in the aerospace industry. The cover glass is the strongest, most durable glass used in any smartphone. And a new rose gold finish joins space gray, silver, and gold.
+                                        </p>
+                                    </div>
+                                </div>
+                                <!-- END product-desc -->
+                            </div>
+                            <!-- END #product-desc -->
+                            <!-- BEGIN #product-info -->
+                            <div class="tab-pane fade" id="product-info">
+                                <!-- BEGIN table-responsive -->
+                                <div class="table-responsive">
+                                    <!-- BEGIN table-product -->
+                                    <table class="table table-product table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th></th>
+                                                <th>iPhone 6s</th>
+                                                <th>iPhone 6s Plus</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td class="field">Capacity</td>
+                                                <td>
+                                                    16GB<br />
+                                                    64GB<br />
+                                                    128GB
+                                                </td>
+                                                <td>
+                                                    16GB<br />
+                                                    64GB<br />
+                                                    128GB
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td class="field">Weight and Dimensions</td>
+                                                <td>
+                                                    5.44 inches (138.3 mm) x 2.64 inches (67.1 mm) x 0.28 inch (7.1 mm)<br />
+                                                    Weight: 5.04 ounces (143 grams)
+                                                </td>
+                                                <td>
+                                                    6.23 inches (158.2 mm) x 3.07 inches (77.9 mm) x 0.29 inch (7.3 mm)<br />
+                                                    Weight: 6.77 ounces (192 grams)
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td class="field">Display</td>
+                                                <td>
+                                                    Retina HD display with 3D Touch<br />
+                                                    4.7-inch (diagonal) LED-backlit widescreen<br />
+                                                    1334-by-750-pixel resolution at 326 ppi<br />
+                                                    1400:1 contrast ratio (typical)<br />
+                                                    <br />
+                                                    <b>Both models:</b><br />
+                                                    500 cd/m2 max brightness (typical)<br />
+                                                    Full sRGB standard<br />
+                                                    Dual-domain pixels for wide viewing angles<br />
+                                                    Fingerprint-resistant oleophobic coating on front<br />
+                                                    Support for display of multiple languages and characters simultaneously<br />
+                                                    Display Zoom<br />
+                                                    Reachability
+                                                </td>
+                                                <td>
+                                                    Retina HD display with 3D Touch<br />
+                                                    5.5-inch (diagonal) LED-backlit widescreen<br />
+                                                    1920-by-1080-pixel resolution at 401 ppi<br />
+                                                    1300:1 contrast ratio (typical)
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td class="field">Chip</td>
+                                                <td colspan="2">
+                                                    A9 chip with 64-bit architecture Embedded M9 motion coprocessor
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td class="field">iSight Camera</td>
+                                                <td colspan="2">
+                                                    New 12-megapixel iSight camera with 1.22µ pixels<br />
+                                                    Live Photos<br />
+                                                    Autofocus with Focus Pixels<br />
+                                                    Optical image stabilization (iPhone 6s Plus only)<br />
+                                                    True Tone flash<br />
+                                                    Panorama (up to 63 megapixels)<br />
+                                                    Auto HDR for photos<br />
+                                                    Exposure control<br />
+                                                    Burst mode<br />
+                                                    Timer mode<br />
+                                                    ƒ/2.2 aperture<br />
+                                                    Five-element lens<br />
+                                                    Hybrid IR filter<br />
+                                                    Backside illumination sensor<br />
+                                                    Sapphire crystal lens cover<br />
+                                                    Auto image stabilization<br />
+                                                    Improved local tone mapping<br />
+                                                    Improved noise reduction<br />
+                                                    Face detection<br />
+                                                    Photo geotagging
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td class="field">Video Recording</td>
+                                                <td colspan="2">
+                                                    4K video recording (3840 by 2160) at 30 fps<br />
+                                                    1080p HD video recording at 30 fps or 60 fps<br />
+                                                    720p HD video recording at 30 fps<br />
+                                                    Optical image stabilization for video (iPhone 6s Plus only)<br />
+                                                    True Tone flash<br />
+                                                    Slo-mo video support for 1080p at 120 fps and 720p at 240 fps<br />
+                                                    Time-lapse video with stabilization<br />
+                                                    Cinematic video stabilization (1080p and 720p)<br />
+                                                    Continuous autofocus video<br />
+                                                    Improved noise reduction<br />
+                                                    Take 8MP still photos while recording 4K video<br />
+                                                    Playback zoom<br />
+                                                    3x zoom<br />
+                                                    Face detection<br />
+                                                    Video geotagging
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                    <!-- END table-product -->
+                                </div>
+                                <!-- END table-responsive -->
+                            </div>
+                            <!-- END #product-info -->
+                            <!-- BEGIN #product-reviews -->
+                            <div class="tab-pane fade" id="product-reviews">
+                                <div class="row row-space-30">
+                                    <div class="col-md-7">
+                                        {% for review in product.reviews.all %}
+                                            <div class="review">
+                                                <div class="review-info">
+                                                    <div class="review-icon">
+                                                        {# Using static placeholder for user icon as seen in the theme #}
+                                                        <img src="{% static 'assets/img/user-1.jpg' %}" alt="" />
+                                                    </div>
+                                                    <div class="review-rate">
+                                                        <ul class="review-star">
+                                                            {# Dynamic star coloring logic #}
+                                                            {% for i in "12345" %}
+                                                                {% if review.rating >= forloop.counter %}
+                                                                    <li class="active"><i class="fa fa-star"></i></li>
+                                                                {% else %}
+                                                                    <li class=""><i class="fa fa-star-o"></i></li>
+                                                                {% endif %}
+                                                            {% endfor %}
+                                                        </ul>
+                                                        ({{ review.rating }}/5)
+                                                    </div>
+                                                    <div class="review-name">{{ review.name }}</div>
+                                                    <div class="review-date">{{ review.created_at|date:"d/m/Y g:ia" }}</div>
+                                                </div>
+                                                <div class="review-title">
+                                                    {{ review.subject }}
+                                                </div>
+                                                <div class="review-message">
+                                                    {{ review.message }}
+                                                </div>
+                                            </div>
+                                        {% empty %}
+                                            <p class="p-20">No reviews yet. Be the first to write one!</p>
+                                        {% endfor %}
+                                    </div>
+                                    <div class="col-md-5">
+                                        <div class="review-form">
+                                            {# Points to a named URL for submission #}
+                                            {% if product.id %}
+                                                <form action="{% url 'submit_review' product.id %}" name="review_form" method="POST">
+                                                    {% csrf_token %}
+                                                    <h2>Write a review</h2>
+                                                    <div class="form-group">
+                                                        <label for="name">Name <span class="text-danger">*</span></label>
+                                                        <input type="text" name="name" class="form-control" id="name" required />
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label for="subject">Title <span class="text-danger">*</span></label>
+                                                        <input type="text" name="subject" class="form-control" id="subject" required />
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label for="review">Review <span class="text-danger">*</span></label>
+                                                        <textarea name="message" class="form-control" rows="8" id="review" required></textarea>
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label>Rating <span class="text-danger">*</span></label>
+                                                        <div class="rating rating-selection" data-rating="true" data-target="rating">
+                                                            {# These classes trigger the theme's interactive star selector #}
+                                                            <i class="fa fa-star-o" data-value="1"></i>
+                                                            <i class="fa fa-star-o" data-value="2"></i>
+                                                            <i class="fa fa-star-o" data-value="3"></i>
+                                                            <i class="fa fa-star-o" data-value="4"></i>
+                                                            <i class="fa fa-star-o" data-value="5"></i>
+                                                            <span class="rating-comment">
+                                                                <span class="rating-comment-tooltip">Click to rate</span>
+                                                            </span>
+                                                        </div>
+                                                        {# Hidden select that the theme's JS will update #}
+                                                        <select name="rating" id="rating" class="hide">
+                                                            <option value="1">1</option>
+                                                            <option value="2">2</option>
+                                                            <option value="3">3</option>
+                                                            <option value="4">4</option>
+                                                            <option value="5">5</option>
+                                                        </select>
+                                                    </div>
+                                                    <button type="submit" class="btn btn-inverse btn-lg">Submit Review</button>
+                                                </form>
+                                            {% else %}
+                                                <p class="text-danger">Error: Product ID not found. Please reload the page from the shop list.</p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- END #product-reviews -->
+                        </div>
+                        <!-- END #product-tab-content -->
+                    </div>
+                    <!-- END product-tab -->
+                </div>
+                <!-- END product -->
+
+                <!-- BEGIN similar-product -->
+                <h4 class="m-t-20">You Might Also Like</h4>
+                <div class="row row-space-10">
+                    {% for similar in similar_products %}
+                        <div class="col-md-2 col-sm-4">
+                            <div class="item item-thumbnail">
+                                <a href="{% url 'product_detail' similar.slug %}" class="item-image">
+                                    {% if similar.image %}
+                                        <img src="{{ similar.image.url }}" alt="{{ similar.product_name }}" />
+                                    {% else %}
+                                        <img src="{% static 'assets/img/placeholder.png' %}" alt="" />
+                                    {% endif %}
+
+                                    {% if similar.discount_price %}
+                                        <div class="discount">
+                                            {{ similar.get_discount_percentage }}% OFF
+                                        </div>
+                                    {% endif %}
+                                </a>
+                                <div class="item-info">
+                                    <h4 class="item-title">
+                                        <a href="{% url 'product_detail' similar.slug %}">
+                                            {{ similar.product_name }}<br>
+                                            <small>{{ similar.category.category_name }}</small>
+                                        </a>
+                                    </h4>
+                                    <p class="item-desc">{{ similar.description|truncatewords:5 }}</p>
+
+                                    <div class="item-price">
+                                        {% if similar.discount_price %}
+                                            ${{ similar.discount_price }}
+                                        {% else %}
+                                            ${{ similar.price }}
+                                        {% endif %}
+                                    </div>
+
+                                    {% if similar.discount_price %}
+                                        <div class="item-discount-price">${{ similar.price }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <p class="p-l-15">No similar products found.</p>
+                    {% endfor %}
+                </div>
+            </div>
+            <!-- END similar-product -->
+            </div>
+            <!-- END container -->
+        </div>
+        <!-- END #product -->
+
+        </div>
+    </div>
+{% endblock %}
+{% endcomment %}

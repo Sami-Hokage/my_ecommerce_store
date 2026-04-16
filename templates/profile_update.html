@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container m-t-30 m-b-30">
+    <div class="section-container">
+        <h2 class="page-header">Edit Profile Settings</h2>
+        
+        <form method="POST" enctype="multipart/form-data" class="form-horizontal">
+            {% csrf_token %}
+            
+            {% for field in form %}
+                <div class="form-group">
+                    <label class="col-md-3 control-label">{{ field.label }}</label>
+                    <div class="col-md-7">
+                        {% if field.name == 'profile_pic' and user.profile_pic %}
+                            <div class="m-b-10">
+                                <img src="{{ user.profile_pic.url }}" width="100" class="img-thumbnail" />
+                            </div>
+                        {% endif %}
+
+                        {{ field }}
+                        {% if field.help_text %}
+                            <p class="help-block">{{ field.help_text }}</p>
+                        {% endif %}
+                        {{ field.errors }}
+                    </div>
+                </div>
+            {% endfor %}
+
+            <div class="form-group">
+                <div class="col-md-7 col-md-offset-3">
+                    <button type="submit" class="btn btn-inverse">Update Profile</button>
+                    <a href="{% url 'my_account' %}" class="btn btn-default">Cancel</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

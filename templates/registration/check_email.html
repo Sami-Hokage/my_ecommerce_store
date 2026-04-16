@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container" style="margin-top: 50px; margin-bottom: 50px;">
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            <div class="panel panel-inverse">
+                <div class="panel-body">
+                    <h2 class="page-header text-primary">Verify Your Email</h2>
+                    <i class="fa fa-envelope-o fa-5x mb-3 text-muted"></i>
+                    <p class="lead">
+                        Success! We have sent an activation link to your email address.
+                    </p>
+                    <p>
+                        Please check your inbox (and your spam folder) to activate your 
+                        <strong>my_ecommerce</strong> account. You cannot log in until 
+                        this step is complete.
+                    </p>
+                    <hr />
+                    <a href="{% url 'login' %}" class="btn btn-outline-primary">Back to Login</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

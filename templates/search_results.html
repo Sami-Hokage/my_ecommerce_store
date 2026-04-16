@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+    <div id="page-container" class="fade in"> <div id="page-header" class="section-container page-header-container bg-black">
+            <div class="page-header-cover">
+                <img src="{% static 'img/search-cover.jpg' %}" alt="" />
+            </div>
+            <div class="container">
+                <h1 class="page-header">Search Results for "<b>{{ query }}</b>"</h1>
+            </div>
+        </div>
+
+        <div id="search-results" class="section-container bg-silver">
+            <div class="container">
+                <div class="search-container">
+                    <div class="search-content">
+                        <div class="search-toolbar">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h4>We found {{ products_count }} Items for "{{ query }}"</h4>
+                                </div>
+                                <div class="col-md-6 text-right">
+                                    <ul class="sort-list">
+                                        <li class="text"><i class="fa fa-filter"></i> Sort by:</li>
+                                        <li class="active"><a href="#">Popular</a></li>
+                                        <li><a href="#">New Arrival</a></li>
+                                        <li><a href="#">Discount</a></li>
+                                        <li><a href="#">Price</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="search-item-container">
+                            <div class="item-row">
+                                {% for product in products %}
+                                    <div class="item item-thumbnail">
+                                        <a href="{{ product.get_url }}" class="item-image">
+                                            <img src="{{ product.image.url }}" alt="" />
+                                        </a>
+                                        <div class="item-info">
+                                            <h4 class="item-title">
+                                                <a href="{{ product.get_url }}">{{ product.product_name }}</a>
+                                            </h4>
+                                            <p class="item-desc">{{ product.description|truncatewords:10 }}</p>
+                                            <div class="item-price">
+                                                {% if product.discount_price %}
+                                                    {# The discounted price (Current Selling Price) #}
+                                                    <span style="color: #f59c1a; font-weight: bold;">${{ product.discount_price }}</span>
+                                                    {# The original price with strikethrough #}
+                                                    <div class="item-discount-price" style="text-decoration: line-through; color: #999; font-size: 0.9em; display: inline-block; margin-left: 5px;">
+                                                        ${{ product.price }}
+                                                    </div>
+                                                {% else %}
+                                                    {# If no discount, just show the regular price in orange #}
+                                                    <span style="color: #f59c1a; font-weight: bold;">${{ product.price }}</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% empty %}
+                                    <div class="col-md-12 text-center">
+                                        <h3>No products found for "{{ query }}".</h3>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <ul class="pagination m-t-0">
+                                <li class="disabled"><a href="javascript:;">Previous</a></li>
+                                <li class="active"><a href="javascript:;">1</a></li>
+                                <li><a href="javascript:;">Next</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="search-sidebar">
+                        <h4 class="title">Filter By</h4>
+                        <form action="{% url 'search_results' %}" method="GET">
+                            <div class="form-group">
+                                <label class="control-label">Keywords</label>
+                                <input type="text" class="form-control input-sm" name="q" value="{{ query }}" placeholder="Enter Keywords" />
+                            </div>
+                            <div class="m-b-30">
+                                <button type="submit" class="btn btn-sm btn-inverse"><i class="fa fa-search"></i> Filter</button>
+                            </div>
+                        </form>
+                        <div class="sidebar">
+                            <h4 class="m-t-20">Navigation</h4>
+                            <ul class="nav nav-list">
+                                <li><a href="{% url 'search_results' %}?q="><strong>View All Products</strong></a></li>
+                            </ul>
+
+                            <h4 class="m-t-20">Categories</h4>
+                            <ul class="nav nav-list">
+                                {% for cat in categories %}
+                                    <li><a href="{% url 'search_results' %}?q={{ cat.category_name }}">{{ cat.category_name }}</a></li>
+                                {% endfor %}
+                            </ul>
+
+                            <h4 class="m-t-20">Brands</h4>
+                            <ul class="nav nav-list">
+                                {% for brand in brands %}
+                                    <li><a href="{% url 'search_results' %}?q={{ brand.brand_name }}">{{ brand.brand_name }}</a></li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+        </div>
+    </div>
+{% endblock %}
