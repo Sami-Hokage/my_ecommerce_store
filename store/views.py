@@ -1,7 +1,12 @@
 from itertools import product as iter_product
 import stripe
-from django.conf import settings
 
+import random
+from datetime import timedelta
+from django.http import JsonResponse
+from django.utils import timezone
+from django.conf import settings
+from django.contrib import messages
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView, CreateView, TemplateView, DetailView
@@ -14,8 +19,9 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.views import View
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
+from django.contrib.auth import login
 from django.template.loader import render_to_string
-from django.core.mail import EmailMessage
+from django.core.mail import send_mail
 from django.contrib.sites.shortcuts import get_current_site
 from .tokens import generate_token
 from django.contrib.auth.decorators import login_required
@@ -178,46 +184,90 @@ class ProductView(TemplateView):
         return context
 
 
+def send_otp_handler(request, user):
+    """Helper function to manage OTP generation and timing logic"""
+    now = timezone.now()
+    last_sent = request.session.get('otp_last_sent')
+
+    # Enforce 120 second gap server-side
+    if last_sent:
+        elapsed = (now - timezone.datetime.fromisoformat(last_sent)).total_seconds()
+        if elapsed < 120:
+            return False, int(120 - elapsed)
+
+    otp = str(random.randint(100000, 999999))
+
+    # Store OTP and Expiry (10 mins) and Last Sent (for 120s gap)
+    request.session['registration_otp'] = otp
+    request.session['otp_expiry'] = (now + timedelta(minutes=10)).isoformat()
+    request.session['otp_last_sent'] = now.isoformat()
+    request.session['temp_user_id'] = user.id
+
+    subject = 'Verify your my_ecommerce Account'
+    # Use render_to_string for the styled email if preferred, or plain text here
+    message = f'Hi {user.username}, your verification code is {otp}. It expires in 10 minutes.'
+    send_mail(subject, message, settings.EMAIL_HOST_USER, [user.email])
+
+    return True, 0
+
 class SignUpView(CreateView):
     form_class = CustomUserCreationForm
     template_name = 'registration/signup.html'
 
     def form_valid(self, form):
-        # 1. Save the user (is_active is already False by default in models.py)
-        user = form.save()
+        user = form.save() # Created with is_active=False
+        send_otp_handler(self.request, user)
+        return redirect('verify_otp')
 
-        # 2. Prepare the verification email
-        current_site = get_current_site(self.request)
-        mail_subject = 'Activate your account'
-        message = render_to_string('registration/activation_email.html', {
-            'user': user,
-            'domain': current_site.domain,
-            'uid': urlsafe_base64_encode(force_bytes(user.pk)),
-            'token': generate_token.make_token(user),
-        })
+def verify_otp(request):
+    user_id = request.session.get('temp_user_id')
+    if not user_id:
+        return redirect('signup')
 
-        # 3. Send the email using your Gmail App Password credentials
-        to_email = form.cleaned_data.get('email')
-        email = EmailMessage(mail_subject, message, to=[to_email])
-        email.send()
+    user = get_object_or_404(User, id=user_id)
 
-        # 4. Show a success page telling them to check their inbox
-        return render(self.request, 'registration/check_email.html')
+    if request.method == 'POST':
+        user_input = request.POST.get('otp')
+        stored_otp = request.session.get('registration_otp')
+        expiry_str = request.session.get('otp_expiry')
 
-def activate(request, uidb64, token):
-    try:
-        uid = force_str(urlsafe_base64_decode(uidb64))
-        user = User.objects.get(pk=uid)
-    except(TypeError, ValueError, OverflowError, User.DoesNotExist):
-        user = None
+        if not stored_otp or timezone.now() > timezone.datetime.fromisoformat(expiry_str):
+            return render(request, 'registration/verify_otp.html', {'error': 'Code expired. Please resend.'})
 
-    if user is not None and generate_token.check_token(user, token):
-        user.is_active = True # Now they can finally log in!
-        user.save()
-        return redirect('login')
+        if user_input == stored_otp:
+            user.is_active = True
+            user.save()
+            login(request, user)  # Automatically log them in
+            # Clean up session
+            del request.session['registration_otp']
+            del request.session['temp_user_id']
+            return redirect('home')
+        else:
+            return render(request, 'registration/verify_otp.html', {'error': 'Invalid code.'})
+
+    return render(request, 'registration/verify_otp.html', {'email': user.email})
+
+
+def resend_otp(request):
+    user_id = request.session.get('temp_user_id')
+    if not user_id:
+        return redirect('signup')
+
+    user = get_object_or_404(User, id=user_id)
+    success, wait_time = send_otp_handler(request, user)
+    if success:
+        messages.success(request, 'New code sent!')
     else:
-        return render(request, 'registration/activation_invalid.html')
+        messages.error(request, f'Please wait {wait_time}s before resending.')
 
+    return redirect('verify_otp')  # Always redirect back to the verification page
+
+def check_username(request):
+    username = request.GET.get('username', None)
+    data = {
+        'is_taken': User.objects.filter(username__iexact=username).exists()
+    }
+    return JsonResponse(data)
 
 class MyAccountView(TemplateView):
     template_name = 'my_account.html'

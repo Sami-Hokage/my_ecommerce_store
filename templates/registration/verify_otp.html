@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container" style="margin-top: 50px; margin-bottom: 50px;">
+    <div class="row justify-content-center">
+        <div class="col-md-5 text-center">
+            <div class="panel panel-inverse shadow" style="padding: 40px; border-radius: 15px;">
+                <h2 class="text-primary mb-4">Email Verification</h2>
+                <p>We've sent a 6-digit code to <br><strong>{{ email }}</strong></p>
+
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+                {% if success %}<div class="alert alert-success">{{ success }}</div>{% endif %}
+
+                <form method="post" action="{% url 'verify_otp' %}" class="my-4">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <input type="text" name="otp" class="form-control text-center" 
+                               placeholder="· · · · · ·" maxlength="6" pattern="\d{6}"
+                               style="font-size: 2.5rem; letter-spacing: 12px; height: 70px; border: 2px solid #348fe2;" required autofocus>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block btn-lg shadow-sm">Verify & Login</button>
+                </form>
+
+                <div class="mt-4">
+                    <p class="text-muted small">Didn't receive the code?</p>
+                    <a href="{% url 'resend_otp' %}" id="resend-btn" class="btn btn-outline-secondary btn-sm disabled">
+                        Resend Code <span id="timer">(120s)</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let timeLeft = 120;
+    const timerElem = document.getElementById('timer');
+    const resendBtn = document.getElementById('resend-btn');
+
+    const countdown = setInterval(() => {
+        timeLeft--;
+        timerElem.innerText = `(${timeLeft}s)`;
+        if (timeLeft <= 0) {
+            clearInterval(countdown);
+            resendBtn.classList.remove('disabled');
+            timerElem.innerText = '';
+        }
+    }, 1000);
+</script>
+{% endblock %}
