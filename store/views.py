@@ -1,9 +1,16 @@
 from itertools import product as iter_product
 import stripe
+
+import random
+
+from datetime import timedelta
+from django.http import JsonResponse, HttpResponse
+from django.utils import timezone
 from django.conf import settings
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import ListView, CreateView, TemplateView, DetailView
 from django.views.generic.edit import UpdateView, DeleteView
 from django.urls import reverse_lazy, reverse
@@ -178,6 +185,32 @@ class ProductView(TemplateView):
         return context
 
 
+def send_otp_handler(request, user):
+    """Helper function to manage OTP generation and timing logic"""
+    now = timezone.now()
+    last_sent = request.session.get('otp_last_sent')
+
+    # Enforce 120 second gap server-side
+    if last_sent:
+        elapsed = (now - timezone.datetime.fromisoformat(last_sent)).total_seconds()
+        if elapsed < 120:
+            return False, int(120 - elapsed)
+
+    otp = str(random.randint(100000, 999999))
+
+    # Store OTP and Expiry (10 mins) and Last Sent (for 120s gap)
+    request.session['registration_otp'] = otp
+    request.session['otp_expiry'] = (now + timedelta(minutes=10)).isoformat()
+    request.session['otp_last_sent'] = now.isoformat()
+    request.session['temp_user_id'] = user.id
+
+    subject = 'Verify your my_ecommerce Account'
+    # Use render_to_string for the styled email if preferred, or plain text here
+    message = f'Hi {user.username}, your verification code is {otp}. It expires in 10 minutes.'
+    send_mail(subject, message, settings.EMAIL_HOST_USER, [user.email])
+
+    return True, 0
+
 class SignUpView(CreateView):
     form_class = CustomUserCreationForm
     template_name = 'registration/signup.html'
@@ -218,6 +251,27 @@ def activate(request, uidb64, token):
     else:
         return render(request, 'registration/activation_invalid.html')
 
+
+def resend_otp(request):
+    user_id = request.session.get('temp_user_id')
+    if not user_id:
+        return redirect('signup')
+
+    user = get_object_or_404(User, id=user_id)
+    success, wait_time = send_otp_handler(request, user)
+    if success:
+        messages.success(request, 'New code sent!')
+    else:
+        messages.error(request, f'Please wait {wait_time}s before resending.')
+
+    return redirect('verify_otp')  # Always redirect back to the verification page
+
+def check_username(request):
+    username = request.GET.get('username', None)
+    data = {
+        'is_taken': User.objects.filter(username__iexact=username).exists()
+    }
+    return JsonResponse(data)
 
 class MyAccountView(TemplateView):
     template_name = 'my_account.html'
@@ -550,6 +604,7 @@ class CheckOutPaymentView(LoginRequiredMixin, TemplateView):
                 source=token,
             )
 
+            order.payment_id = charge.id
             order.order_total = grand_total
             order.tax = tax
             order.is_ordered = True
@@ -586,6 +641,37 @@ class CheckOutPaymentView(LoginRequiredMixin, TemplateView):
 
         except stripe.error.CardError as e:
             return render(request, self.template_name, {'error': e.user_message})
+
+
+@csrf_exempt
+def stripe_webhook(request):
+    payload = request.body
+    sig_header = request.META.get('HTTP_STRIPE_SIGNATURE')
+    event = None
+
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, settings.STRIPE_WEBHOOK_SECRET
+        )
+    except (ValueError, stripe.error.SignatureVerificationError):
+        return HttpResponse(status=400)
+
+    # Handle the successful charge event
+    if event['type'] == 'charge.succeeded':
+        charge = event['data']['object']
+        payment_id = charge['id']
+
+        try:
+            order = Order.objects.get(payment_id=payment_id)
+            if not order.is_ordered:
+                order.is_ordered = True
+                order.status = 'Accepted'
+                order.save()
+                # You could also trigger an email to the customer here
+        except Order.DoesNotExist:
+            pass
+
+    return HttpResponse(status=200)
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 

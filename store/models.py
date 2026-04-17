@@ -188,6 +188,7 @@ class Order(models.Model):
     zip_code = models.CharField(max_length=10, blank=True)
     order_total = models.FloatField()
     tax = models.FloatField()
+    payment_id = models.CharField(max_length=100, blank=True, null=True)
     status = models.CharField(max_length=10, choices=STATUS, default='New')
     ip = models.CharField(blank=True, max_length=20)
     is_ordered = models.BooleanField(default=False)

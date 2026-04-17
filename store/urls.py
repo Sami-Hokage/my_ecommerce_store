@@ -25,5 +25,5 @@ urlpatterns = [
     path('verify-otp/', views.verify_otp, name='verify_otp'),
     path('resend-otp/', views.resend_otp, name='resend_otp'),
     path('check-username/', views.check_username, name='check_username'),
-
+    path('stripe-webhook/', views.stripe_webhook, name='stripe_webhook'),
 ]
