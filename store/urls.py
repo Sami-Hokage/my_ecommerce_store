@@ -22,6 +22,8 @@ urlpatterns = [
     path('checkout_complete/', views.checkout_complete, name='checkout_complete'),
     path('manage_orders/', views.MyOrdersView.as_view(), name='manage_orders'),
     path('my_order_detail/<int:order_id>/', views.OrderDetailView.as_view(), name='my_order_detail'),
-    path('activate/<uidb64>/<token>/', views.activate, name='activate'),
-    path('check_email/', views.SignUpView.as_view(), name='check_email'),
+    path('verify-otp/', views.verify_otp, name='verify_otp'),
+    path('resend-otp/', views.resend_otp, name='resend_otp'),
+    path('check-username/', views.check_username, name='check_username'),
+
 ]

@@ -5,6 +5,12 @@ from .models import User, Order  # Import your Custom User model
 
 class CustomUserCreationForm(UserCreationForm):
     # We add 'form-control' classes so it matches the ColorAdmin theme
+    first_name = forms.CharField(
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'First Name'})
+    )
+    last_name = forms.CharField(
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Last Name'})
+    )
     phone_number = forms.CharField(
         widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter phone'})
     )
@@ -18,7 +24,7 @@ class CustomUserCreationForm(UserCreationForm):
     class Meta(UserCreationForm.Meta):
         model = User
         # These are the fields that will appear on the Signup page
-        fields = UserCreationForm.Meta.fields + ('email', 'username', 'phone_number', 'city', 'shipping_address')
+        fields = UserCreationForm.Meta.fields + ('first_name', 'last_name', 'username', 'email', 'phone_number', 'city', 'shipping_address')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
