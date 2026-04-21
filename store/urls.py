@@ -22,8 +22,8 @@ urlpatterns = [
     path('checkout_complete/', views.checkout_complete, name='checkout_complete'),
     path('manage_orders/', views.MyOrdersView.as_view(), name='manage_orders'),
     path('my_order_detail/<int:order_id>/', views.OrderDetailView.as_view(), name='my_order_detail'),
-    path('verify-otp/', views.verify_otp, name='verify_otp'),
-    path('resend-otp/', views.resend_otp, name='resend_otp'),
+    path('verify-otp/', views.VerifyOTPView.as_view(), name='verify_otp'),
+    path('resend-otp/', views.ResendOTPView.as_view(), name='resend_otp'),
     path('check-username/', views.check_username, name='check_username'),
     path('stripe-webhook/', views.stripe_webhook, name='stripe_webhook'),
 ]
