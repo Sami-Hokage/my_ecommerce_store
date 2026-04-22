@@ -1,0 +1,113 @@
+{% autoescape off %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Confirmation</title>
+    <style>
+        /* ColorAdmin Modern Styles */
+        body { margin: 0; padding: 0; width: 100% !important; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; background-color: #d9e0e7; font-family: 'Open Sans', Helvetica, Arial, sans-serif; }
+        img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+        table { border-collapse: collapse !important; }
+
+        .container { width: 100%; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 4px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header { background-color: #2d353c; padding: 30px; text-align: center; }
+        .header h1 { color: #ffffff; margin: 0; font-size: 20px; font-weight: 300; letter-spacing: 2px; text-transform: uppercase; }
+
+        .content { padding: 40px 30px; }
+        .greeting { font-size: 18px; font-weight: 600; color: #242a30; margin-bottom: 10px; }
+        .text-muted { color: #707478; line-height: 1.6; font-size: 14px; }
+
+        .order-info-table { width: 100%; margin: 25px 0; border-top: 1px solid #e2e7eb; border-bottom: 1px solid #e2e7eb; padding: 15px 0; }
+        .item-table { width: 100%; margin-bottom: 30px; }
+        .item-table th { text-align: left; padding: 12px; border-bottom: 2px solid #e2e7eb; color: #2d353c; font-size: 12px; text-transform: uppercase; }
+        .item-table td { padding: 12px; border-bottom: 1px solid #f2f3f4; color: #575d63; font-size: 14px; }
+
+        .total-section { width: 100%; margin-top: 10px; }
+        .total-row td { padding: 5px 12px; text-align: right; font-size: 14px; }
+        .grand-total { color: #348fe2; font-size: 20px !important; font-weight: 700; }
+
+        .shipping-card { background-color: #f8f9fa; border-left: 4px solid #348fe2; padding: 20px; margin-top: 30px; }
+
+
+        .button-container { text-align: center; padding: 40px 0 20px 0; }
+        .btn-primary { background-color: #348fe2; color: #ffffff !important; padding: 13px 35px; text-decoration: none; border-radius: 4px; display: inline-block; font-weight: 600; font-size: 14px; transition: background 0.3s; }
+
+        .footer { text-align: center; padding: 30px; font-size: 12px; color: #929ba1; background-color: #f2f3f4; }
+
+        @media only screen and (max-width: 600px) {
+            .content { padding: 20px 15px !important; }
+            .container { width: 95% !important; }
+        }
+    </style>
+</head>
+<body>
+    <div style="background-color: #d9e0e7; padding: 40px 0;">
+        <div class="container">
+            <header class="header">
+                <h1>Order Confirmed</h1>
+            </header>
+
+            <main class="content">
+                <div class="greeting">Hi {{ user.first_name }},</div>
+                <p class="text-muted">
+                    Thank you for your purchase! We've received your payment and our warehouse team is currently preparing your package for shipment.
+                </p>
+
+                <table class="order-info-table">
+                    <tr>
+                        <td style="font-size: 14px;">Order: <span style="color: #348fe2; font-weight: 700;">#ORD-{{ order.id }}</span></td>
+                        <td style="text-align: right; font-size: 14px;">Status: <span style="background: #348fe2; color: #ffffff; padding: 2px 8px; border-radius: 3px; font-size: 11px;">{{ order.status|upper }}</span></td>
+                    </tr>
+                </table>
+
+                <table class="item-table">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th style="text-align: center;">Qty</th>
+                            <th style="text-align: right;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in order_products %}
+                        <tr>
+                            <td style="font-weight: 600;">{{ item.product.product_name }}</td>
+                            <td style="text-align: center;">{{ item.quantity }}</td>
+                            <td style="text-align: right;">${{ item.product_price }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <table class="total-section">
+                    <tr class="total-row">
+                        <td style="color: #707478;">Tax:</td>
+                        <td style="width: 100px;">${{ order.tax }}</td>
+                    </tr>
+                    <tr class="total-row">
+                        <td style="font-weight: 700; padding-top: 10px; border-top: 1px solid #e2e7eb;">Grand Total:</td>
+                        <td class="grand-total" style="padding-top: 10px; border-top: 1px solid #e2e7eb;">${{ order.order_total }}</td>
+                    </tr>
+                </table>
+
+                <div class="shipping-card">
+                    <div style="font-weight: 700; font-size: 14px; margin-bottom: 5px; color: #2d353c;">Delivery Address</div>
+                    <address style="font-style: normal; font-size: 14px; color: #575d63; line-height: 1.5;">
+                        {{ order.address_line_1 }}<br>
+                        {{ order.city }}, {{ order.country }}
+                    </address>
+                </div>
+            </main>
+
+            <footer class="footer">
+                <p style="margin: 0 0 10px 0;">If you have any questions, reply to this email or visit our support page.</p>
+                <p style="margin: 0; font-weight: 700;">&copy; 2026 my_ecommerce Team</p>
+            </footer>
+        </div>
+        </div>
+</body>
+</html>
+{% endautoescape %}

@@ -597,6 +597,31 @@ class CheckOutCartView(TemplateView):
         context['quantity'] = quantity
         return context
 
+
+def send_order_confirmation_email(request, order):
+    subject = f'Order Confirmation - ORD-{order.id}'
+    order_products = OrderProduct.objects.filter(order=order)  #
+
+    context = {
+        'user': request.user,
+        'order': order,
+        'order_products': order_products,
+        'domain': get_current_site(request).domain,
+    }
+
+
+    html_message = render_to_string('outflow_cart/order_confirmation_email.html', context)
+    plain_message = f"Hi {request.user.first_name}, thank you for your ORD-{order.id}."
+
+    send_mail(
+        subject,
+        plain_message,
+        settings.EMAIL_HOST_USER,
+        [order.email],
+        html_message=html_message,
+        fail_silently=False,
+    )
+
 stripe.api_key = settings.STRIPE_SECRET_KEY
 class CheckOutPaymentView(LoginRequiredMixin, TemplateView):
     login_url = 'login'
@@ -639,8 +664,11 @@ class CheckOutPaymentView(LoginRequiredMixin, TemplateView):
     def post(self, request, *args, **kwargs):
         order_id = request.session.get('order_id')
         order = get_object_or_404(Order, id=order_id, user=request.user)
-        token = request.POST.get('stripeToken')
 
+        if order.is_ordered:
+            return redirect(f"{reverse('checkout_complete')}?order_number={order.id}")
+
+        token = request.POST.get('stripeToken')
         if not token:
             from django.contrib import messages
             messages.error(request, "Payment token missing. Please ensure JavaScript is enabled.")
@@ -649,10 +677,7 @@ class CheckOutPaymentView(LoginRequiredMixin, TemplateView):
 
 
         cart_items = CartItem.objects.filter(cart__cart_id=_cart_id(request))
-        total = 0
-        for item in cart_items:
-            total += item.sub_total()
-
+        total = sum(item.sub_total() for item in cart_items)
         tax = (5 * total) / 100
         grand_total = total + tax
 
@@ -673,6 +698,7 @@ class CheckOutPaymentView(LoginRequiredMixin, TemplateView):
 
 
             cart_items = CartItem.objects.filter(cart__cart_id=_cart_id(request))
+
 
             for item in cart_items:
                 order_product = OrderProduct()
@@ -696,6 +722,11 @@ class CheckOutPaymentView(LoginRequiredMixin, TemplateView):
 
             if 'order_id' in request.session:
                 del request.session['order_id']
+
+            try:
+                send_order_confirmation_email(request, order)
+            except Exception as e:
+                print(f"Email error: {e}")
 
             return redirect(f"{reverse('checkout_complete')}?order_number={order.id}")
 
