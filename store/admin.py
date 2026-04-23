@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import User, Category, Product, Brand, Review, Variation, ProductImage, ProductDescriptionSection, ProductAdditionalInfo, Cart, CartItem, Order, OrderProduct
+from .models import User, Category, Product, Brand, Review, Variation, ProductImage, ProductDescriptionSection, ProductAdditionalInfo, Cart, CartItem, Order, OrderProduct, OTPVerification
 # Import your custom User model
 
 
@@ -93,3 +93,19 @@ admin.site.register(Order, OrderAdmin)
 @admin.register(OrderProduct)
 class OrderProductAdmin(admin.ModelAdmin):
     list_display = ['order_id', 'order', 'user', 'product', 'product_price', 'ordered','created_at', 'updated_at']
+
+
+@admin.register(OTPVerification)
+class OTPVerificationAdmin(admin.ModelAdmin):
+
+    list_display = ('user', 'otp_code', 'created_at', 'is_expired_status')
+
+
+    search_fields = ('user__email', 'user__username', 'otp_code')
+
+
+    def is_expired_status(self, obj):
+        return obj.is_expired()
+
+    is_expired_status.boolean = True
+    is_expired_status.short_description = 'Has Expired?'

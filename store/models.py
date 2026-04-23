@@ -1,8 +1,10 @@
 from symtable import Class
+import datetime
 from django.urls import reverse
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, User
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.utils import timezone
 from django.utils.text import slugify
 
 class User(AbstractUser):
@@ -217,3 +219,12 @@ class OrderProduct(models.Model):
 
     def __str__(self):
         return self.product.product_name
+
+class OTPVerification(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    otp_code = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def is_expired(self):
+        expiration_time = self.created_at + datetime.timedelta(minutes=5)
+        return timezone.now() > expiration_time

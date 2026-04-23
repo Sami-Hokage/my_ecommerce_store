@@ -19,7 +19,7 @@ from django.views.generic import ListView, CreateView, TemplateView, DetailView
 from django.views.generic.edit import UpdateView, DeleteView
 from django.urls import reverse_lazy, reverse
 from .forms import CustomUserCreationForm, UserUpdateForm, OrderForm
-from .models import Product, User, Category, Brand, Review, Variation, Cart, CartItem, Order, OrderProduct
+from .models import Product, User, Category, Brand, Review, Variation, Cart, CartItem, Order, OrderProduct, OTPVerification
 from django.db.models import Q, F
 from django.core.exceptions import ObjectDoesNotExist
 from django.views import View
@@ -194,7 +194,7 @@ def send_otp_handler(request, user):
     now = timezone.now()
     last_sent = request.session.get('otp_last_sent')
 
-    # Enforce 120 second gap server-side
+
     if last_sent:
         elapsed = (now - timezone.datetime.fromisoformat(last_sent)).total_seconds()
         if elapsed < 120:
@@ -202,9 +202,12 @@ def send_otp_handler(request, user):
 
     otp = str(random.randint(100000, 999999))
 
-    # Store OTP and Expiry (10 mins) and Last Sent (for 120s gap)
-    request.session['registration_otp'] = otp
-    request.session['otp_expiry'] = (now + timedelta(minutes=10)).isoformat()
+
+    OTPVerification.objects.update_or_create(
+        user=user,
+        defaults={'otp_code': otp, 'created_at': now}
+    )
+
     request.session['otp_last_sent'] = now.isoformat()
     request.session['temp_user_id'] = user.id
 
@@ -254,27 +257,30 @@ class VerifyOTPView(View):
 
         user = get_object_or_404(User, id=user_id)
         user_input = request.POST.get('otp')
-        stored_otp = request.session.get('registration_otp')
-        expiry_str = request.session.get('otp_expiry')
 
-        if not stored_otp or timezone.now() > timezone.datetime.fromisoformat(expiry_str):
+        otp_record = OTPVerification.objects.filter(user=user).first()
+
+        if not otp_record or otp_record.is_expired():
             return render(request, self.template_name, {
-                'error': 'Code expired. Please resend.',
-                'email': user.email
+                'email': user.email,
+                'error': 'OTP expired or not found. Please resend.'
+
 
             })
 
-        if user_input == stored_otp:
+        if user_input == otp_record.otp_code:
             user.is_active = True
             user.save()
-            login(request, user)  # Automatically log them in
-            # Clean up session
+            otp_record.delete()
+            login(request, user)
+
             self.clear_session_data(request)
             return redirect('home')
         else:
             return render(request, self.template_name, {
-                'error': 'Invalid code.',
-                'email': user.email
+                'email': user.email,
+                'error': 'Invalid OTP code.'
+
 
             })
 
@@ -282,7 +288,7 @@ class VerifyOTPView(View):
         keys_to_delete = ['registration_otp', 'otp_expiry', 'temp_user_id']
         for key in keys_to_delete:
             if key in request.session:
-                del request.session[key]
+                request.session.pop(key, None)
 
 
 
