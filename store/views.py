@@ -1,13 +1,17 @@
+import string
 from itertools import product as iter_product
+from random import choice
+
 import stripe
 
 import random
 
-from datetime import timedelta
 from django.http import JsonResponse, HttpResponse
+import random
+from datetime import timedelta
 from django.utils import timezone
 from django.conf import settings
-
+from django.contrib import messages
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.decorators.csrf import csrf_exempt
@@ -15,16 +19,16 @@ from django.views.generic import ListView, CreateView, TemplateView, DetailView
 from django.views.generic.edit import UpdateView, DeleteView
 from django.urls import reverse_lazy, reverse
 from .forms import CustomUserCreationForm, UserUpdateForm, OrderForm
-from .models import Product, User, Category, Brand, Review, Variation, Cart, CartItem, Order, OrderProduct
+from .models import Product, User, Category, Brand, Review, Variation, Cart, CartItem, Order, OrderProduct, OTPVerification
 from django.db.models import Q, F
 from django.core.exceptions import ObjectDoesNotExist
 from django.views import View
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
+from django.contrib.auth import login
 from django.template.loader import render_to_string
-from django.core.mail import EmailMessage
+from django.core.mail import send_mail
 from django.contrib.sites.shortcuts import get_current_site
-from .tokens import generate_token
 from django.contrib.auth.decorators import login_required
 
 
@@ -190,7 +194,7 @@ def send_otp_handler(request, user):
     now = timezone.now()
     last_sent = request.session.get('otp_last_sent')
 
-    # Enforce 120 second gap server-side
+
     if last_sent:
         elapsed = (now - timezone.datetime.fromisoformat(last_sent)).total_seconds()
         if elapsed < 120:
@@ -198,16 +202,31 @@ def send_otp_handler(request, user):
 
     otp = str(random.randint(100000, 999999))
 
-    # Store OTP and Expiry (10 mins) and Last Sent (for 120s gap)
-    request.session['registration_otp'] = otp
-    request.session['otp_expiry'] = (now + timedelta(minutes=10)).isoformat()
+
+    OTPVerification.objects.update_or_create(
+        user=user,
+        defaults={'otp_code': otp, 'created_at': now}
+    )
+
     request.session['otp_last_sent'] = now.isoformat()
     request.session['temp_user_id'] = user.id
 
     subject = 'Verify your my_ecommerce Account'
-    # Use render_to_string for the styled email if preferred, or plain text here
-    message = f'Hi {user.username}, your verification code is {otp}. It expires in 10 minutes.'
-    send_mail(subject, message, settings.EMAIL_HOST_USER, [user.email])
+
+    context = {
+        'username': user.username,
+        'otp': otp,
+    }
+    html_message = render_to_string('registration/activation_email.html', context)
+    plain_message = f'Hi {user.username}, your verification code is {otp}. It expires in 10 minutes.'
+
+    send_mail(
+        subject,
+        plain_message,
+        settings.EMAIL_HOST_USER,
+        [user.email],
+        html_message=html_message,
+    )
 
     return True, 0
 
@@ -216,62 +235,109 @@ class SignUpView(CreateView):
     template_name = 'registration/signup.html'
 
     def form_valid(self, form):
-        # 1. Save the user (is_active is already False by default in models.py)
-        user = form.save()
+        user = form.save() # Created with is_active=False
+        send_otp_handler(self.request, user)
+        return redirect('verify_otp')
 
-        # 2. Prepare the verification email
-        current_site = get_current_site(self.request)
-        mail_subject = 'Activate your account'
-        message = render_to_string('registration/activation_email.html', {
-            'user': user,
-            'domain': current_site.domain,
-            'uid': urlsafe_base64_encode(force_bytes(user.pk)),
-            'token': generate_token.make_token(user),
-        })
+class VerifyOTPView(View):
+    template_name = 'registration/verify_otp.html'
 
-        # 3. Send the email using your Gmail App Password credentials
-        to_email = form.cleaned_data.get('email')
-        email = EmailMessage(mail_subject, message, to=[to_email])
-        email.send()
+    def get(self, request):
+        user_id = request.session.get('temp_user_id')
+        if not user_id:
+            return redirect('signup')
 
-        # 4. Show a success page telling them to check their inbox
-        return render(self.request, 'registration/check_email.html')
+        user = get_object_or_404(User, id=user_id)
+        return render(request, self.template_name, {'email': user.email})
 
-def activate(request, uidb64, token):
-    try:
-        uid = force_str(urlsafe_base64_decode(uidb64))
-        user = User.objects.get(pk=uid)
-    except(TypeError, ValueError, OverflowError, User.DoesNotExist):
-        user = None
+    def post(self, request):
+        user_id = request.session.get('temp_user_id')
+        if not user_id:
+            return redirect('signup')
 
-    if user is not None and generate_token.check_token(user, token):
-        user.is_active = True # Now they can finally log in!
-        user.save()
-        return redirect('login')
-    else:
-        return render(request, 'registration/activation_invalid.html')
+        user = get_object_or_404(User, id=user_id)
+        user_input = request.POST.get('otp')
+
+        otp_record = OTPVerification.objects.filter(user=user).first()
+
+        if not otp_record or otp_record.is_expired():
+            return render(request, self.template_name, {
+                'email': user.email,
+                'error': 'OTP expired or not found. Please resend.'
 
 
-def resend_otp(request):
-    user_id = request.session.get('temp_user_id')
-    if not user_id:
-        return redirect('signup')
+            })
 
-    user = get_object_or_404(User, id=user_id)
-    success, wait_time = send_otp_handler(request, user)
-    if success:
-        messages.success(request, 'New code sent!')
-    else:
-        messages.error(request, f'Please wait {wait_time}s before resending.')
+        if user_input == otp_record.otp_code:
+            user.is_active = True
+            user.save()
+            otp_record.delete()
+            login(request, user)
 
-    return redirect('verify_otp')  # Always redirect back to the verification page
+            self.clear_session_data(request)
+            return redirect('home')
+        else:
+            return render(request, self.template_name, {
+                'email': user.email,
+                'error': 'Invalid OTP code.'
+
+
+            })
+
+    def clear_session_data(self, request):
+        keys_to_delete = ['registration_otp', 'otp_expiry', 'temp_user_id']
+        for key in keys_to_delete:
+            if key in request.session:
+                request.session.pop(key, None)
+
+
+
+
+class ResendOTPView(View):
+    def get(self, request):
+        user_id = request.session.get('temp_user_id')
+        if not user_id:
+            return redirect('signup')
+
+        user = get_object_or_404(User, id=user_id)
+
+        success, wait_time = send_otp_handler(request, user)
+
+        if success:
+            messages.success(request, 'New code sent!')
+        else:
+            messages.error(request, f'Please wait {wait_time}s before resending.')
+
+        return redirect('verify_otp')  # Always redirect back to the verification page
 
 def check_username(request):
-    username = request.GET.get('username', None)
-    data = {
-        'is_taken': User.objects.filter(username__iexact=username).exists()
-    }
-    return JsonResponse(data)
+    username = request.GET.get('username', '').strip()
+    first_name = request.GET.get('first_name', '').strip().lower()
+    last_name = request.GET.get('last_name', '').strip().lower()
+
+
+    is_taken = User.objects.filter(username__iexact=username).exists()
+    suggestions = []
+
+    if is_taken and first_name and last_name:
+        base = f"{first_name} {last_name}"
+
+        while len(suggestions) < 3:
+            choice = random.choice(['digits', 'chars'])
+            if choice == 'digits':
+                suffix = "".join(random.choices(string.digits, k=random.randint(1,2)))
+            else:
+                suffix = "".join(random.choices(string.ascii_letters, k=random.randint(1,2)))
+
+            candidate = f"{base}{suffix}"
+            if not User.objects.filter(username__iexact=candidate).exists() and candidate not in suggestions:
+                suggestions.append(candidate)
+
+    return JsonResponse({
+        'is_taken': is_taken,
+        'suggestions': suggestions
+    })
+
 
 class MyAccountView(TemplateView):
     template_name = 'my_account.html'

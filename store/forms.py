@@ -21,10 +21,12 @@ class CustomUserCreationForm(UserCreationForm):
         widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'City'})
     )
 
+    field_order = ['first_name', 'last_name', 'username', 'email', 'phone_number', 'city', 'shipping_address']
+
     class Meta(UserCreationForm.Meta):
         model = User
         # These are the fields that will appear on the Signup page
-        fields = UserCreationForm.Meta.fields + ('first_name', 'last_name', 'username', 'email', 'phone_number', 'city', 'shipping_address')
+        fields = ('first_name', 'last_name', 'username', 'email', 'phone_number', 'city', 'shipping_address')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
