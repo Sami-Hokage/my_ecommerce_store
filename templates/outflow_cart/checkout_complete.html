@@ -85,7 +85,7 @@
                                             </tr>
                                             <tr>
                                                 <td class="field">Transaction Reference No.</td>
-                                                <td class="value">ORD-{{ order.id }}</td>
+                                                <td class="value">ORD-000{{ order.id }}</td>
                                             </tr>
                                             <tr>
                                                 <td class="field">Bank Authorised Code</td>
@@ -98,11 +98,8 @@
                                             <tr>
                                                 <td class="field">Orders</td>
                                                 <td class="value product-summary">
-                                                    {% for item in order.user.cart_set.first.cart_item_set.all %}
+                                                    {% for item in order.orderproduct_set.all %}
                                                         <div class="m-b-10">
-                                                            <div class="product-summary-img">
-                                                                <img src="{{ item.product.image.url }}" alt="{{ item.product.product_name }}" />
-                                                            </div>
                                                             <div class="product-summary-info">
                                                                 <div class="title">{{ item.product.product_name }}</div>
                                                                 <div class="desc">Qty: {{ item.quantity }} | Price: ${{ item.sub_total }}</div>
