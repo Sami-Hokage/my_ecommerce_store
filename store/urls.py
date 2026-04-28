@@ -1,8 +1,11 @@
 from django.urls import path
 from .views import HomeView, SignUpView, MyAccountView, CheckOutCartView, CheckOutInfoView, ProductView, ProfileUpdateView, ProductDetailView, SearchResultsView, AddToCartView,Cart,CartItem,Variation
 from . import views
+from django.views.generic import TemplateView
 
 urlpatterns = [
+    path('firebase-messaging-sw.js', views.service_worker, name='service_worker'),
+    path('save_device/', views.save_device, name='save_device'),
     path('', HomeView.as_view(), name='home'),
     path('signup/', SignUpView.as_view(), name='signup'),
     path('account/', MyAccountView.as_view(), name='my_account'),
@@ -22,8 +25,8 @@ urlpatterns = [
     path('checkout_complete/', views.checkout_complete, name='checkout_complete'),
     path('manage_orders/', views.MyOrdersView.as_view(), name='manage_orders'),
     path('my_order_detail/<int:order_id>/', views.OrderDetailView.as_view(), name='my_order_detail'),
-    path('verify-otp/', views.verify_otp, name='verify_otp'),
-    path('resend-otp/', views.resend_otp, name='resend_otp'),
+    path('verify-otp/', views.VerifyOTPView.as_view(), name='verify_otp'),
+    path('resend-otp/', views.ResendOTPView.as_view(), name='resend_otp'),
     path('check-username/', views.check_username, name='check_username'),
-    path('stripe-webhook/', views.stripe_webhook, name='stripe_webhook'),
+    path('stripe-webhook/', views.stripe_webhook, name='stripe_webhook'),# store/urls.py
 ]

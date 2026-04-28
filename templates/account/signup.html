@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+    <div class="row justify-content-center">
+        <div class="col-xl-6 col-lg-8">
+            <div class="panel panel-inverse">
+                <div class="panel-heading">
+                    <h4 class="panel-title">Sign Up   <small> -- </small> <small>  Join our store today</small></h4>
+                </div>
+                <div class="panel-body">
+                    <form method="post" class="form-horizontal">
+                        {% csrf_token %}
+
+                        <h5 class="mb-3">Account Information</h5>
+                        {% for field in form %}
+                            <div class="mb-3 row">
+                                <label class="col-form-label col-md-3 text-md-end">{{ field.label_tag }}</label>
+                                <div class="col-md-9">
+                                    {{ field }}
+                                    {# 1. Added availability status indicator for username field #}
+                                    {% if field.name == "username" %}
+                                        <div id="username-status" class="small mt-1" style="display: none; font-weight: 600;"></div>
+                                    {% endif %}
+
+                                    {% if field.help_text %}
+                                        <small class="form-text text-muted d-block">{{ field.help_text }}</small>
+                                    {% endif %}
+                                    {% for error in field.errors %}
+                                        <div class="text-danger small">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            {# Add a visual break after basic info #}
+                            {% if field.name == "email" %}
+                                <hr class="bg-gray-500" />
+                                <h5 class="mb-3">Delivery Details</h5>
+                            {% endif %}
+                        {% endfor %}
+
+                        <div class="row">
+                            <div class="col-md-9 offset-md-3 mt-3">
+                                <button type="submit" class="btn btn-primary w-100 btn-lg">Create My Account</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="panel-footer text-center">
+                    Already have an account? <a href="{% url 'account_login' %}">Login here</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {# 2. JavaScript for automatic suggestions and availability check #}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const firstName = document.querySelector('input[name="first_name"]');
+        const lastName = document.querySelector('input[name="last_name"]');
+        const usernameInput = document.querySelector('input[name="username"]');
+        const statusDiv = document.getElementById('username-status');
+
+        let userEditedUsername = false;
+
+        // Function to suggest a username based on names
+        function suggestUsername() {
+            if (!userEditedUsername && firstName.value && lastName.value) {
+                const base = (firstName.value + lastName.value).toLowerCase().replace(/\s/g, '');
+                // Appends 3 random digits as requested
+                const randomDigits = Math.floor(100 + Math.random() * 900);
+                const suggestion = base + randomDigits;
+
+                usernameInput.value = suggestion;
+                checkAvailability(suggestion);
+            }
+        }
+
+        // Function to check username availability via AJAX
+        async function checkAvailability(username) {
+            if (username.length < 3) {
+                statusDiv.style.display = 'none';
+                return;
+            }
+
+            try {
+                // Ensure this URL matches what you defined in urls.py
+                const url = `/check-username/?username=${encodeURIComponent(username)}&first_name=${encodeURIComponent(firstName.value)}&last_name=${encodeURIComponent(lastName.value)}`;
+                const response = await fetch(url);
+                const data = await response.json();
+
+                statusDiv.style.display = 'block';
+                if (data.is_taken) {
+                    let html = `<span style="color: #ff5b57;">✖ Not available. Try:</span><br>`;
+
+                    data.suggestions.forEach(sug => {
+                        html += `<a href="#" class="suggested-link" data-user="${sug}" style="color: #348fe2; margin-right: 10px;">${sug}</a>`;
+                    });
+                    statusDiv.innerHTML = html;
+
+
+                    document.querySelectorAll('.suggested-link').forEach(link => {
+                        link.onclick = (e) => {
+                            e.preventDefault();
+                            usernameInput.value = e.target.getAttribute('data-user');
+                            checkAvailability(usernameInput.value);
+                        };
+                    });
+                } else {
+                    statusDiv.innerText = "✔ This username is available";
+                    statusDiv.style.color = "#00acac"; // ColorAdmin green
+                }
+            } catch (error) {
+                console.error('Error :', error);
+            }
+        }
+
+        // Event Listeners
+        if(firstName) firstName.addEventListener('input', suggestUsername);
+        if(lastName) lastName.addEventListener('input', suggestUsername);
+
+        if(usernameInput) {
+            usernameInput.addEventListener('input', () => {
+                userEditedUsername = true;
+                checkAvailability(usernameInput.value);
+            });
+        }
+    });
+</script>
+{% endblock %}
