@@ -1,13 +1,14 @@
 import string
 from itertools import product as iter_product
 from random import choice
-
+import os
 import stripe
-
+import json
 import random
-
-from django.http import JsonResponse, HttpResponse
+from push_notifications.models import WebPushDevice
+from django.http import JsonResponse, HttpResponse, Http404
 import random
+from fcm_django.models import FCMDevice
 from datetime import timedelta
 from django.utils import timezone
 from django.conf import settings
@@ -217,7 +218,7 @@ def send_otp_handler(request, user):
         'username': user.username,
         'otp': otp,
     }
-    html_message = render_to_string('registration/activation_email.html', context)
+    html_message = render_to_string('account/activation_email.html', context)
     plain_message = f'Hi {user.username}, your verification code is {otp}. It expires in 10 minutes.'
 
     send_mail(
@@ -232,7 +233,7 @@ def send_otp_handler(request, user):
 
 class SignUpView(CreateView):
     form_class = CustomUserCreationForm
-    template_name = 'registration/signup.html'
+    template_name = 'account/signup.html'
 
     def form_valid(self, form):
         user = form.save() # Created with is_active=False
@@ -240,7 +241,7 @@ class SignUpView(CreateView):
         return redirect('verify_otp')
 
 class VerifyOTPView(View):
-    template_name = 'registration/verify_otp.html'
+    template_name = 'account/verify_otp.html'
 
     def get(self, request):
         user_id = request.session.get('temp_user_id')
@@ -272,7 +273,7 @@ class VerifyOTPView(View):
             user.is_active = True
             user.save()
             otp_record.delete()
-            login(request, user)
+            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
 
             self.clear_session_data(request)
             return redirect('home')
@@ -678,6 +679,8 @@ class CheckOutPaymentView(LoginRequiredMixin, TemplateView):
             order.save()
 
 
+
+
             cart_items = CartItem.objects.filter(cart__cart_id=_cart_id(request))
 
             for item in cart_items:
@@ -773,3 +776,35 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         context['order_items'] = OrderProduct.objects.filter(order=self.object)
         return context
+
+
+def service_worker(request):
+    path = os.path.join(settings.BASE_DIR, 'static', 'firebase-messaging-sw.js')
+    with open(path, 'rb') as f:
+        return HttpResponse(f.read(), content_type='application/javascript')
+
+
+@csrf_exempt
+def save_device(request):
+    if request.method == 'POST':
+        if not request.user.is_authenticated:
+            return JsonResponse({'status': 'error', 'message': 'Not logged in'}, status=401)
+
+        try:
+            data = json.loads(request.body)
+            reg_id = data.get('registration_id')
+
+            if reg_id:
+                # Switched from WebPushDevice to FCMDevice
+                device, created = FCMDevice.objects.update_or_create(
+                    registration_id=reg_id,
+                    defaults={
+                        'user': request.user,
+                        'active': True,
+                        'type': 'web'  # Important for web push
+                    }
+                )
+                return JsonResponse({'status': 'success', 'created': created})
+            return JsonResponse({'status': 'error', 'message': 'No ID provided'}, status=400)
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)

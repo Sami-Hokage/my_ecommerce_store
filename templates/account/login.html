@@ -22,30 +22,37 @@
 </head>
 
 {% block content %}
-<div class="login-content">
-    <h1 class="page-header">Login <small>to start shopping</small></h1>
-    <div class="panel panel-inverse">
-        <div class="panel-body">
+    <div class="login-content">
+        <h1 class="page-header">Login <small>to start shopping</small></h1>
+        <div class="panel panel-inverse">
+            <div class="panel-body">
 
-            {% if form.errors %}
-                <div class="alert alert-danger">
-                    Your username and password didn't match. Please try again.
-                </div>
-            {% endif %}
+                {% if form.errors %}
+                    <div class="alert alert-danger">
+                        Your username and password didn't match. Please try again.
+                    </div>
+                {% endif %}
 
-            <form method="post">
-                {% csrf_token %}
-                <div class="form-group mb-3">
-                    {{ form.as_p }}
-                </div>
-                <button type="submit" class="btn btn-primary w-100">Sign Me In</button>
-            </form>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="form-group mb-3">
+                        {{ form.as_p }}
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Sign Me In</button>
+                </form>
 
-            <hr />
-            <p class="text-center mb-0">
-                Don't have an account? <a href="{% url 'signup' %}" class="text-primary">Register here</a>
-            </p>
+                <hr />
+                <p class="text-center mb-0">
+                    Don't have an account? <a href="{% url 'signup' %}" class="text-primary">Register here</a>
+                </p>
+            </div>
         </div>
     </div>
+{% load socialaccount %} <div class="social-login-container" style="margin-top: 20px; text-align: center;">
+    <p>OR</p>
+
+    <a href="{% provider_login_url 'google' process='login' %}" class="btn btn-danger btn-block">
+        <i class="fa fa-google fa-fw"></i> Login with Google
+    </a>
 </div>
 {% endblock %}

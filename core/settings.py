@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 import os.path
 import os
+import firebase_admin
+from firebase_admin import credentials
 from pathlib import Path
 from dotenv import load_dotenv
 load_dotenv()
@@ -43,6 +45,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
+    'push_notifications',
+    'fcm_django',
     'store',
 ]
 
@@ -54,6 +63,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'allauth.account.middleware.AccountMiddleware'
 ]
 
 ROOT_URLCONF = 'core.urls'
@@ -153,3 +163,46 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.getenv('EMAIL_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_PASS')
+
+# Authentication Backends
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+SITE_ID = 1
+
+SOCIALACCOUNT_ADAPTER = 'store.adapter.MySocialAccountAdapter'
+
+# Allauth Settings
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_LOGIN_METHODS = {'email'}
+ACCOUNT_USERNAME_REQUIRED = True
+ACCOUNT_EMAIL_VERIFICATION = 'none' # This prevents Allauth from sending its own verification emails
+SOCIALACCOUNT_LOGIN_ON_GET = True
+
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+            'prompt': 'select_account',  # This forces the account selection box
+        }
+    }
+}
+
+PUSH_NOTIFICATIONS_SETTINGS = {
+    "FCM_API_KEY": "your_server_key_here",
+}
+
+FIREBASE_APP = firebase_admin.initialize_app(
+    credentials.Certificate(os.path.join(BASE_DIR, 'myecommercestore-a40e7-firebase-adminsdk-fbsvc-587ebaea0b.json' )),
+)
+
+FCM_DJANGO_SETTINGS = {
+     "DEFAULT_FIREBASE_APP": None, # Use the default app initialized above
+     "ONE_DEVICE_PER_USER": False,
+     "DELETE_INACTIVE_DEVICES": True,
+}

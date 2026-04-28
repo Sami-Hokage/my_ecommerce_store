@@ -287,7 +287,7 @@
                                         {% endif %}
                                         <li class="divider"></li>
                                         <li>
-                                            <form action="{% url 'logout' %}" method="post" style="display:inline;">
+                                            <form action="{% url 'account_logout' %}" method="post" style="display:inline;">
                                                 {% csrf_token %}
                                                 <button type="submit" class="btn-link" style="padding: 3px 20px; color: #333; text-decoration: none; width: 100%; text-align: left;">
                                                     <i class="fa fa-sign-out fa-fw"></i> Logout
@@ -296,7 +296,7 @@
                                         </li>
                                     </ul>
                                 {% else %}
-                                    <a href="{% url 'login' %}">
+                                    <a href="{% url 'account_login' %}">
                                         <span class="hidden-md hidden-sm hidden-xs">Login / Register</span>
                                     </a>
                                 {% endif %}
@@ -517,6 +517,61 @@
         $(document).ready(function() {
             App.init();
         });
+    </script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getMessaging, getToken } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBE1mjBbc2mHtMUVEaSGtXGyBff-gxmSVA",
+            authDomain: "myecommercestore-a40e7.firebaseapp.com",
+            projectId: "myecommercestore-a40e7",
+            storageBucket: "myecommercestore-a40e7.firebasestorage.app",
+            messagingSenderId: "821670537756",
+            appId: "1:821670537756:web:c24e6c01ec8ba2d031cdd9"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const messaging = getMessaging(app);
+
+        async function initializeFCM() {
+            {% if user.is_authenticated %}
+                try {
+                    // Register and wait for 'ready' status
+                    const registration = await navigator.serviceWorker.register('{% url "service_worker" %}');
+                    const activeRegistration = await navigator.serviceWorker.ready;
+
+                    const token = await getToken(messaging, {
+                        serviceWorkerRegistration: activeRegistration,
+                        vapidKey: 'BKq-Y9VU4UtWUrdSMfqyq428VFSZMj5H6VlbuSWAxAXBm965x2PvfqTdFUdVzJ6VBGmGAVAv3Fmq0k7gDB1OtB0'
+                    });
+
+                    if (token) {
+                        console.log("Token acquired:", token);
+                        const response = await fetch('/save_device/', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': '{{ csrf_token }}'
+                            },
+                            body: JSON.stringify({
+                                registration_id: token
+                            })
+                        });
+                        const result = await response.json();
+                        console.log("Server Response:", result);
+                    }
+                } catch (error) {
+                    console.error("FCM Setup Error:", error);
+                }
+                {% endif %}
+        }
+
+        if ('serviceWorker' in navigator) {
+            Notification.requestPermission().then(permission => {
+                if (permission === 'granted') initializeFCM();
+            });
+        }
     </script>
     {% block extra_js %}{% endblock %}
 </body>

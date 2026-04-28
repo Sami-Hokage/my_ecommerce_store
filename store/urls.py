@@ -1,8 +1,11 @@
 from django.urls import path
 from .views import HomeView, SignUpView, MyAccountView, CheckOutCartView, CheckOutInfoView, ProductView, ProfileUpdateView, ProductDetailView, SearchResultsView, AddToCartView,Cart,CartItem,Variation
 from . import views
+from django.views.generic import TemplateView
 
 urlpatterns = [
+    path('firebase-messaging-sw.js', views.service_worker, name='service_worker'),
+    path('save_device/', views.save_device, name='save_device'),
     path('', HomeView.as_view(), name='home'),
     path('signup/', SignUpView.as_view(), name='signup'),
     path('account/', MyAccountView.as_view(), name='my_account'),
@@ -25,5 +28,5 @@ urlpatterns = [
     path('verify-otp/', views.VerifyOTPView.as_view(), name='verify_otp'),
     path('resend-otp/', views.ResendOTPView.as_view(), name='resend_otp'),
     path('check-username/', views.check_username, name='check_username'),
-    path('stripe-webhook/', views.stripe_webhook, name='stripe_webhook'),
+    path('stripe-webhook/', views.stripe_webhook, name='stripe_webhook'),# store/urls.py
 ]
